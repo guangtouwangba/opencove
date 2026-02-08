@@ -39,7 +39,6 @@ function WorkspaceCanvasInner({
   nodes,
   onNodesChange,
 }: WorkspaceCanvasProps): JSX.Element {
-  const [activeNodeId, setActiveNodeId] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{
     x: number
     y: number
@@ -64,11 +63,8 @@ function WorkspaceCanvasInner({
 
       const next = nodes.filter(node => node.id !== nodeId)
       onNodesChange(next)
-      if (activeNodeId === nodeId) {
-        setActiveNodeId(null)
-      }
     },
-    [activeNodeId, nodes, onNodesChange],
+    [nodes, onNodesChange],
   )
 
   const normalizePosition = useCallback(
@@ -113,8 +109,6 @@ function WorkspaceCanvasInner({
           title={data.title}
           width={data.width}
           height={data.height}
-          isActive={activeNodeId === id}
-          onFocus={() => setActiveNodeId(id)}
           onClose={() => {
             void closeNode(id)
           }}
@@ -122,7 +116,7 @@ function WorkspaceCanvasInner({
         />
       ),
     }),
-    [activeNodeId, closeNode, resizeNode],
+    [closeNode, resizeNode],
   )
 
   const handlePaneContextMenu = useCallback(
@@ -184,7 +178,6 @@ function WorkspaceCanvasInner({
     }
 
     onNodesChange([...nodes, nextNode])
-    setActiveNodeId(newNodeId)
     setContextMenu(null)
   }, [contextMenu, nodes, onNodesChange, workspacePath])
 
@@ -246,6 +239,10 @@ function WorkspaceCanvasInner({
         nodeTypes={nodeTypes}
         onNodesChange={applyChanges}
         onPaneContextMenu={handlePaneContextMenu}
+        zoomOnScroll
+        panOnScroll={false}
+        zoomOnPinch
+        zoomOnDoubleClick
         fitView
         minZoom={0.1}
         maxZoom={2}

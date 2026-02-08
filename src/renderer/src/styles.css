@@ -173,13 +173,6 @@ body {
   position: relative;
 }
 
-.terminal-node--active {
-  border-color: rgba(132, 176, 255, 0.95);
-  box-shadow:
-    0 0 0 1px rgba(88, 134, 240, 0.5),
-    0 18px 40px rgba(0, 0, 0, 0.5);
-}
-
 .terminal-node__header {
   height: 34px;
   display: flex;

@@ -9,8 +9,6 @@ interface TerminalNodeProps {
   title: string
   width: number
   height: number
-  isActive: boolean
-  onFocus: () => void
   onClose: () => void
   onResize: (size: { width: number; height: number }) => void
 }
@@ -23,8 +21,6 @@ export function TerminalNode({
   title,
   width,
   height,
-  isActive,
-  onFocus,
   onClose,
   onResize,
 }: TerminalNodeProps): JSX.Element {
@@ -167,10 +163,11 @@ export function TerminalNode({
   return (
     <div
       ref={nodeRef}
-      className={`terminal-node ${isActive ? 'terminal-node--active' : ''}`}
+      className="terminal-node"
       style={sizeStyle}
-      onMouseDown={onFocus}
-      onPointerDown={onFocus}
+      onWheelCapture={event => {
+        event.stopPropagation()
+      }}
     >
       <div className="terminal-node__header" data-node-drag-handle="true">
         <span className="terminal-node__title">{title}</span>
