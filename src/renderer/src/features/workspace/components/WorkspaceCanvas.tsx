@@ -1387,7 +1387,7 @@ function WorkspaceCanvasInner({
         panOnScroll={false}
         zoomOnPinch
         zoomOnDoubleClick
-        fitView
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         minZoom={0.1}
         maxZoom={2}
         proOptions={{ hideAttribution: true }}
