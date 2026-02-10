@@ -108,6 +108,12 @@ body {
   overflow: auto;
 }
 
+.workspace-item-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .workspace-sidebar__empty {
   font-size: 13px;
   color: #7f93bb;
@@ -151,6 +157,15 @@ body {
 .workspace-item__meta {
   font-size: 11px;
   color: #b2c3e5;
+}
+
+.workspace-item__agents {
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 1px dashed rgba(123, 157, 255, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .workspace-sidebar__footer {
@@ -651,6 +666,12 @@ body {
   border-color: rgba(137, 170, 255, 0.7);
 }
 
+.workspace-agent-item--nested {
+  border-radius: 8px;
+  background: rgba(11, 20, 38, 0.72);
+  padding: 7px 8px;
+}
+
 .workspace-agent-item__title {
   font-size: 12px;
   white-space: nowrap;
@@ -955,6 +976,20 @@ body {
   font-size: 12px;
 }
 
+.task-node__edit {
+  border: 1px solid rgba(106, 140, 231, 0.45);
+  background: rgba(17, 30, 55, 0.88);
+  color: #d6e6ff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.task-node__edit:hover {
+  background: rgba(36, 56, 98, 0.95);
+}
+
 .task-node__run-agent {
   border: 1px solid rgba(123, 157, 255, 0.5);
   background: rgba(58, 91, 182, 0.32);
@@ -968,6 +1003,93 @@ body {
 
 .task-node__run-agent:hover {
   background: rgba(84, 123, 238, 0.45);
+}
+
+.task-node__resizer {
+  position: absolute;
+  border: none;
+  background: transparent;
+  z-index: 2;
+  touch-action: none;
+}
+
+.task-node__resizer--right {
+  top: 34px;
+  bottom: 8px;
+  right: 0;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+.task-node__resizer--right::before {
+  content: '';
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 52px;
+  border-radius: 999px;
+  background: rgba(167, 193, 255, 0.72);
+}
+
+.task-node__resizer--bottom {
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 10px;
+  cursor: ns-resize;
+}
+
+.task-node__resizer--bottom::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  transform: translateX(-50%);
+  width: 52px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(167, 193, 255, 0.72);
+}
+
+.workspace-task-delete-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  background: rgba(5, 10, 20, 0.56);
+  display: grid;
+  place-items: center;
+}
+
+.workspace-task-delete {
+  width: min(440px, calc(100vw - 48px));
+  border: 1px solid rgba(123, 157, 255, 0.42);
+  border-radius: 12px;
+  background: rgba(11, 18, 34, 0.96);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.45);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.workspace-task-delete h3 {
+  font-size: 18px;
+  color: #eff5ff;
+}
+
+.workspace-task-delete p {
+  font-size: 13px;
+  color: #dbe7ff;
+  line-height: 1.45;
+}
+
+.workspace-task-delete__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 @media (max-width: 860px) {

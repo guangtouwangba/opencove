@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   AGENT_PROVIDER_LABEL,
   AGENT_PROVIDERS,
@@ -69,7 +69,7 @@ export function SettingsPanel({
   onRefreshProviderModels,
   onChange,
   onClose,
-}: SettingsPanelProps): JSX.Element {
+}: SettingsPanelProps): React.JSX.Element {
   const [addModelInputByProvider, setAddModelInputByProvider] = useState<
     Record<AgentProvider, string>
   >(() => createInitialInputState())

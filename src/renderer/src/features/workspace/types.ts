@@ -34,6 +34,7 @@ export interface TaskNodeData {
 }
 
 export interface TerminalNodeData {
+  [key: string]: unknown
   sessionId: string
   title: string
   width: number

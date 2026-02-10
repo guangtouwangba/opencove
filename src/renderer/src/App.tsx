@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { SettingsPanel } from './features/settings/components/SettingsPanel'
 import {
   AGENT_PROVIDERS,
@@ -9,7 +9,7 @@ import {
   type AgentSettings,
 } from './features/settings/agentConfig'
 import { WorkspaceCanvas } from './features/workspace/components/WorkspaceCanvas'
-import type { WorkspaceState } from './features/workspace/types'
+import type { TerminalNodeData, WorkspaceState } from './features/workspace/types'
 import {
   readPersistedState,
   toPersistedState,
@@ -28,6 +28,7 @@ interface ProviderModelCatalogEntry {
 type ProviderModelCatalog = Record<AgentProvider, ProviderModelCatalogEntry>
 
 interface FocusRequest {
+  workspaceId: string
   nodeId: string
   sequence: number
 }
@@ -94,7 +95,7 @@ function toRelativeTime(iso: string | null): string {
   return `${Math.floor(deltaSeconds / 86400)}d ago`
 }
 
-function App(): JSX.Element {
+function App(): React.JSX.Element {
   const [workspaces, setWorkspaces] = useState<WorkspaceState[]>([])
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null)
   const [agentSettings, setAgentSettings] = useState<AgentSettings>(DEFAULT_AGENT_SETTINGS)
@@ -228,10 +229,12 @@ function App(): JSX.Element {
           )
 
           const hydratedNodes = hydratedNodeResults
-            .filter((result): result is PromiseFulfilledResult<(typeof runtimeNodes)[number]> => {
-              return result.status === 'fulfilled'
-            })
-            .map(result => result.value)
+            .filter(result => result.status === 'fulfilled')
+            .map(
+              result =>
+                (result as PromiseFulfilledResult<import('@xyflow/react').Node<TerminalNodeData>>)
+                  .value,
+            )
 
           return {
             id: workspace.id,
@@ -327,20 +330,6 @@ function App(): JSX.Element {
   const activeProviderModel =
     resolveAgentModel(agentSettings, agentSettings.defaultProvider) ?? 'Default (Follow CLI)'
 
-  const activeWorkspaceAgents = useMemo(() => {
-    if (!activeWorkspace) {
-      return []
-    }
-
-    return activeWorkspace.nodes
-      .filter(node => node.data.kind === 'agent')
-      .sort((left, right) => {
-        const leftTime = left.data.startedAt ? Date.parse(left.data.startedAt) : 0
-        const rightTime = right.data.startedAt ? Date.parse(right.data.startedAt) : 0
-        return rightTime - leftTime
-      })
-  }, [activeWorkspace])
-
   const handleAddWorkspace = async (): Promise<void> => {
     const selected = await window.coveApi.workspace.selectDirectory()
     if (!selected) {
@@ -409,6 +398,13 @@ function App(): JSX.Element {
 
             {workspaces.map(workspace => {
               const isActive = workspace.id === activeWorkspaceId
+              const workspaceAgents = workspace.nodes
+                .filter(node => node.data.kind === 'agent')
+                .sort((left, right) => {
+                  const leftTime = left.data.startedAt ? Date.parse(left.data.startedAt) : 0
+                  const rightTime = right.data.startedAt ? Date.parse(right.data.startedAt) : 0
+                  return rightTime - leftTime
+                })
               const terminalCount = workspace.nodes.filter(
                 node => node.data.kind === 'terminal',
               ).length
@@ -417,61 +413,57 @@ function App(): JSX.Element {
               const metaText = `${terminalCount} terminals · ${agentCount} agents · ${taskCount} tasks`
 
               return (
-                <button
-                  type="button"
-                  key={workspace.id}
-                  className={`workspace-item ${isActive ? 'workspace-item--active' : ''}`}
-                  onClick={() => {
-                    setActiveWorkspaceId(workspace.id)
-                    setFocusRequest(null)
-                  }}
-                  title={workspace.path}
-                >
-                  <span className="workspace-item__name">{workspace.name}</span>
-                  <span className="workspace-item__path">{workspace.path}</span>
-                  <span className="workspace-item__meta">{metaText}</span>
-                </button>
+                <div className="workspace-item-group" key={workspace.id}>
+                  <button
+                    type="button"
+                    className={`workspace-item ${isActive ? 'workspace-item--active' : ''}`}
+                    onClick={() => {
+                      setActiveWorkspaceId(workspace.id)
+                      setFocusRequest(null)
+                    }}
+                    title={workspace.path}
+                  >
+                    <span className="workspace-item__name">{workspace.name}</span>
+                    <span className="workspace-item__path">{workspace.path}</span>
+                    <span className="workspace-item__meta">{metaText}</span>
+                  </button>
+
+                  {workspaceAgents.length > 0 ? (
+                    <div className="workspace-item__agents">
+                      {workspaceAgents.map(node => {
+                        const provider = node.data.agent?.provider
+                        const providerText = provider ? AGENT_PROVIDER_LABEL[provider] : 'Agent'
+                        const statusText = node.data.status ?? 'running'
+                        const startedText = toRelativeTime(node.data.startedAt)
+
+                        return (
+                          <button
+                            type="button"
+                            key={`${workspace.id}:${node.id}`}
+                            className="workspace-agent-item workspace-agent-item--nested"
+                            data-testid={`workspace-agent-item-${workspace.id}-${node.id}`}
+                            onClick={() => {
+                              setActiveWorkspaceId(workspace.id)
+                              setFocusRequest(prev => ({
+                                workspaceId: workspace.id,
+                                nodeId: node.id,
+                                sequence: (prev?.sequence ?? 0) + 1,
+                              }))
+                            }}
+                          >
+                            <span className="workspace-agent-item__title">{node.data.title}</span>
+                            <span className="workspace-agent-item__meta">
+                              {providerText} · {statusText} · {startedText}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : null}
+                </div>
               )
             })}
           </div>
-
-          <section className="workspace-sidebar__agents">
-            <div className="workspace-sidebar__agents-header">
-              <span>Agents</span>
-              <span>{activeWorkspaceAgents.length}</span>
-            </div>
-
-            {activeWorkspaceAgents.length === 0 ? (
-              <p className="workspace-sidebar__agents-empty">No agent sessions.</p>
-            ) : (
-              activeWorkspaceAgents.map(node => {
-                const provider = node.data.agent?.provider
-                const providerText = provider ? AGENT_PROVIDER_LABEL[provider] : 'Agent'
-                const statusText = node.data.status ?? 'running'
-                const startedText = toRelativeTime(node.data.startedAt)
-
-                return (
-                  <button
-                    type="button"
-                    key={node.id}
-                    className="workspace-agent-item"
-                    data-testid={`workspace-agent-item-${node.id}`}
-                    onClick={() => {
-                      setFocusRequest(prev => ({
-                        nodeId: node.id,
-                        sequence: (prev?.sequence ?? 0) + 1,
-                      }))
-                    }}
-                  >
-                    <span className="workspace-agent-item__title">{node.data.title}</span>
-                    <span className="workspace-agent-item__meta">
-                      {providerText} · {statusText} · {startedText}
-                    </span>
-                  </button>
-                )
-              })
-            )}
-          </section>
 
           <div className="workspace-sidebar__footer">
             <button
@@ -493,8 +485,16 @@ function App(): JSX.Element {
               nodes={activeWorkspace.nodes}
               onNodesChange={handleWorkspaceNodesChange}
               agentSettings={agentSettings}
-              focusNodeId={focusRequest?.nodeId ?? null}
-              focusSequence={focusRequest?.sequence ?? 0}
+              focusNodeId={
+                focusRequest && focusRequest.workspaceId === activeWorkspace.id
+                  ? focusRequest.nodeId
+                  : null
+              }
+              focusSequence={
+                focusRequest && focusRequest.workspaceId === activeWorkspace.id
+                  ? focusRequest.sequence
+                  : 0
+              }
             />
           ) : (
             <div className="workspace-empty-state">
