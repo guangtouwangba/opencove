@@ -142,6 +142,11 @@ pnpm test:e2e
 - 改为 `onWheel`（冒泡阶段）里 `stopPropagation`；
 - 保留 xterm 默认滚动行为，同时阻断 ReactFlow 的缩放处理。
 
+E2E 断言注意：
+
+- 不要依赖 `.xterm-helper-textarea` 的可见性断言，它在部分时序下会处于 hidden 但输入链路正常。
+- 采用 `.xterm-screen` 点击聚焦后再用 `window.keyboard` 输入，可显著降低假失败。
+
 对应用例：
 
 - `tests/e2e/workspace-canvas.spec.ts` 中 `wheel over terminal scrolls terminal viewport`。
@@ -161,4 +166,3 @@ pnpm test:e2e
 
 - `tests/e2e/workspace-canvas.spec.ts` 中 `keeps terminal visible after drag, resize, and node interactions`。
 - `tests/e2e/workspace-canvas.spec.ts` 中 `keeps agent tui visible while dragging window`。
-

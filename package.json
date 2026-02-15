@@ -1,10 +1,23 @@
 {
   "name": "cove",
   "version": "0.1.0",
-  "description": "Cove - Electron + React + TypeScript Application",
+  "description": "Cove - local-first desktop workspace for AI coding agents",
   "main": "./out/main/index.js",
   "author": "deadwave",
   "license": "MIT",
+  "keywords": [
+    "electron",
+    "react",
+    "typescript",
+    "ai-agent",
+    "claude-code",
+    "codex",
+    "developer-tools"
+  ],
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
