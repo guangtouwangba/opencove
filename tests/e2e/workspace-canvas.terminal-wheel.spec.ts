@@ -50,11 +50,13 @@ test.describe('Workspace Canvas - Terminal Wheel', () => {
 
       const terminal = window.locator('.terminal-node').first()
       await expect(terminal).toBeVisible()
+      const xterm = terminal.locator('.xterm')
+      await expect(xterm).toBeVisible()
+      await xterm.click()
       const terminalInput = terminal.locator('.xterm-helper-textarea')
-      await expect(terminalInput).toBeVisible()
-      await terminalInput.click()
+      await expect(terminalInput).toBeFocused()
       await window.keyboard.type('for i in $(seq 1 260); do echo COVE_SCROLL_$i; done')
-      await terminalInput.press('Enter')
+      await window.keyboard.press('Enter')
       await expect(terminal).toContainText('COVE_SCROLL_260')
 
       const viewport = terminal.locator('.xterm-viewport')

@@ -136,11 +136,13 @@ test.describe('Workspace Canvas - Trackpad Gestures', () => {
       await expect(pane).toBeVisible()
       await expect(terminal).toBeVisible()
 
+      const xterm = terminal.locator('.xterm')
+      await expect(xterm).toBeVisible()
+      await xterm.click()
       const terminalInput = terminal.locator('.xterm-helper-textarea')
-      await expect(terminalInput).toBeVisible()
-      await terminalInput.click()
+      await expect(terminalInput).toBeFocused()
       await window.keyboard.type('for i in $(seq 1 260); do echo TRACKPAD_SCROLL_$i; done')
-      await terminalInput.press('Enter')
+      await window.keyboard.press('Enter')
       await expect(terminal).toContainText('TRACKPAD_SCROLL_260')
 
       await window.evaluate(() => {

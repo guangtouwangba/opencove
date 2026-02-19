@@ -4,7 +4,7 @@ import { Handle, Position } from '@xyflow/react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
-import type { AgentNodeData, AgentRuntimeStatus, WorkspaceNodeKind } from '../types'
+import type { AgentRuntimeStatus, WorkspaceNodeKind } from '../types'
 import { resolveStablePtySize } from '../utils/terminalResize'
 import {
   MIN_HEIGHT,
@@ -13,42 +13,15 @@ import {
   type ResizeAxis,
 } from './terminalNode/constants'
 import { mergeScrollbackSnapshots } from './terminalNode/scrollback'
-import { getStatusClassName, getStatusLabel } from './terminalNode/status'
+import { TerminalNodeHeader } from './terminalNode/TerminalNodeHeader'
+import { resolveSuffixPrefixOverlap } from './terminalNode/overlap'
 import { useTerminalScrollback } from './terminalNode/useScrollback'
 import { shouldStopWheelPropagation } from './terminalNode/wheel'
-
-function resolveSuffixPrefixOverlap(left: string, right: string): number {
-  if (left.length === 0 || right.length === 0) {
-    return 0
-  }
-
-  const max = Math.min(left.length, right.length)
-  const leftTail = left.slice(-max)
-  const rightPrefix = right.slice(0, max)
-  const combined = `${rightPrefix}\u0000${leftTail}`
-
-  const prefix = new Uint32Array(combined.length)
-  let cursor = 0
-
-  for (let index = 1; index < combined.length; index += 1) {
-    while (cursor > 0 && combined[index] !== combined[cursor]) {
-      cursor = prefix[cursor - 1]
-    }
-
-    if (combined[index] === combined[cursor]) {
-      cursor += 1
-      prefix[index] = cursor
-    }
-  }
-
-  return prefix[combined.length - 1]
-}
 
 interface TerminalNodeProps {
   sessionId: string
   title: string
   kind: WorkspaceNodeKind
-  agentProvider?: AgentNodeData['provider'] | null
   status: AgentRuntimeStatus | null
   lastError: string | null
   width: number
@@ -67,7 +40,6 @@ export function TerminalNode({
   sessionId,
   title,
   kind,
-  agentProvider,
   status,
   lastError,
   width,
@@ -128,8 +100,6 @@ export function TerminalNode({
     lastSyncedPtySizeRef.current = null
   }, [sessionId])
 
-  const shouldLockPtyRowShrink = kind === 'agent' && agentProvider === 'codex'
-
   const renderedSize = draftSize ?? { width, height }
   const sizeStyle = useMemo(
     () => ({ width: renderedSize.width, height: renderedSize.height }),
@@ -164,7 +134,7 @@ export function TerminalNode({
     const nextPtySize = resolveStablePtySize({
       previous: lastSyncedPtySizeRef.current,
       measured: { cols: terminal.cols, rows: terminal.rows },
-      preventRowShrink: shouldLockPtyRowShrink,
+      preventRowShrink: false,
     })
 
     if (!nextPtySize) {
@@ -178,7 +148,7 @@ export function TerminalNode({
       cols: nextPtySize.cols,
       rows: nextPtySize.rows,
     })
-  }, [sessionId, shouldLockPtyRowShrink])
+  }, [sessionId])
 
   useEffect(() => {
     const ptyWithOptionalAttach = window.coveApi.pty as typeof window.coveApi.pty & {
@@ -447,10 +417,6 @@ export function TerminalNode({
   }, [height, isResizing, onResize, scheduleScrollbackPublish, syncTerminalSize, width])
 
   const isAgentNode = kind === 'agent'
-  const canStop =
-    isAgentNode &&
-    (status === 'running' || status === 'restoring' || status === null) &&
-    typeof onStop === 'function'
 
   return (
     <div
@@ -465,61 +431,15 @@ export function TerminalNode({
       <Handle type="target" position={Position.Left} className="workspace-node-handle" />
       <Handle type="source" position={Position.Right} className="workspace-node-handle" />
 
-      <div className="terminal-node__header" data-node-drag-handle="true">
-        <span className="terminal-node__title">{title}</span>
-
-        {isAgentNode ? (
-          <div className="terminal-node__agent-controls nodrag">
-            <span className={`terminal-node__status ${getStatusClassName(status)}`}>
-              {getStatusLabel(status)}
-            </span>
-            <button
-              type="button"
-              className="terminal-node__action"
-              disabled={!canStop}
-              onClick={event => {
-                event.stopPropagation()
-                onStop?.()
-              }}
-            >
-              Stop
-            </button>
-            <button
-              type="button"
-              className="terminal-node__action"
-              disabled={typeof onRerun !== 'function'}
-              onClick={event => {
-                event.stopPropagation()
-                onRerun?.()
-              }}
-            >
-              Rerun
-            </button>
-            <button
-              type="button"
-              className="terminal-node__action"
-              disabled={typeof onResume !== 'function'}
-              onClick={event => {
-                event.stopPropagation()
-                onResume?.()
-              }}
-            >
-              Resume
-            </button>
-          </div>
-        ) : null}
-
-        <button
-          type="button"
-          className="terminal-node__close nodrag"
-          onClick={event => {
-            event.stopPropagation()
-            onClose()
-          }}
-        >
-          ×
-        </button>
-      </div>
+      <TerminalNodeHeader
+        title={title}
+        kind={kind}
+        status={status}
+        onClose={onClose}
+        onStop={onStop}
+        onRerun={onRerun}
+        onResume={onResume}
+      />
 
       {isAgentNode && lastError ? <div className="terminal-node__error">{lastError}</div> : null}
 

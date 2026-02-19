@@ -52,6 +52,7 @@ test.describe('Workspace Canvas - Persistence', () => {
 
       const token = `COVE_PERSIST_${Date.now()}`
       await terminal.locator('.xterm').click()
+      await expect(terminal.locator('.xterm-helper-textarea')).toBeFocused()
       await window.keyboard.type(`echo ${token}`)
       await window.keyboard.press('Enter')
       await expect(terminal).toContainText(token)
@@ -89,6 +90,7 @@ test.describe('Workspace Canvas - Persistence', () => {
 
       const token = `COVE_RELOAD_${Date.now()}`
       await terminal.locator('.xterm').click()
+      await expect(terminal.locator('.xterm-helper-textarea')).toBeFocused()
       await window.keyboard.type(`echo ${token}`)
       await window.keyboard.press('Enter')
       await expect(terminal).toContainText(token)

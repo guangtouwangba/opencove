@@ -14,6 +14,7 @@ describe('buildAgentLaunchCommand', () => {
     expect(command.command).toBe('codex')
     expect(command.args).toEqual([
       '--full-auto',
+      '--no-alt-screen',
       '--model',
       'gpt-5.2-codex',
       'implement login flow',
@@ -49,6 +50,7 @@ describe('buildAgentLaunchCommand', () => {
     expect(command.command).toBe('codex')
     expect(command.args).toEqual([
       'resume',
+      '--no-alt-screen',
       '019c3e32-52ff-7b00-94ac-e6c5a56b4aa4',
       '--model',
       'gpt-5.2-codex',
