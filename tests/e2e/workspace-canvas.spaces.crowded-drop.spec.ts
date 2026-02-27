@@ -60,8 +60,10 @@ test.describe('Workspace Canvas - Spaces (Crowded Drop)', () => {
       await expect
         .poll(async () => {
           return await window.evaluate(
-            ({ key, spaceId, nodeAId, nodeBId, initialWidth, initialHeight }) => {
-              const raw = window.localStorage.getItem(key)
+            async ({ key, spaceId, nodeAId, nodeBId, initialWidth, initialHeight }) => {
+              void key
+
+              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return false
               }
@@ -279,8 +281,10 @@ test.describe('Workspace Canvas - Spaces (Crowded Drop)', () => {
 
       const assertSpaceStable = async (): Promise<boolean> => {
         return await window.evaluate(
-          ({ key, spaceId, nodeAId, nodeBId, initialWidth, initialHeight }) => {
-            const raw = window.localStorage.getItem(key)
+          async ({ key, spaceId, nodeAId, nodeBId, initialWidth, initialHeight }) => {
+            void key
+
+            const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
             if (!raw) {
               return false
             }

@@ -69,8 +69,10 @@ test.describe('Workspace Canvas - Spaces (Anchors & Mismatch)', () => {
       await expect(window.locator('.task-node')).toHaveCount(2)
 
       const belongs = await window.evaluate(
-        ({ key, spaceId }) => {
-          const raw = window.localStorage.getItem(key)
+        async ({ key, spaceId }) => {
+          void key
+
+          const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
           if (!raw) {
             return null
           }
@@ -200,8 +202,10 @@ test.describe('Workspace Canvas - Spaces (Anchors & Mismatch)', () => {
       await expect
         .poll(async () => {
           return await window.evaluate(
-            ({ key, nodeId }) => {
-              const raw = window.localStorage.getItem(key)
+            async ({ key, nodeId }) => {
+              void key
+
+              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return null
               }

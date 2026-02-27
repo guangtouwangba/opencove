@@ -1,6 +1,7 @@
 import { DEFAULT_AGENT_SETTINGS, type AgentSettings } from '../../../settings/agentConfig'
 import type { PersistedAppState, WorkspaceState } from '../../types'
 import { DEFAULT_WORKSPACE_MINIMAP_VISIBLE } from '../../types'
+import { PERSISTED_APP_STATE_FORMAT_VERSION } from './constants'
 import {
   normalizeOptionalString,
   normalizeScrollback,
@@ -15,6 +16,7 @@ export function toPersistedState(
   settings: AgentSettings = DEFAULT_AGENT_SETTINGS,
 ): PersistedAppState {
   return {
+    formatVersion: PERSISTED_APP_STATE_FORMAT_VERSION,
     activeWorkspaceId,
     workspaces: workspaces.map(workspace => ({
       id: workspace.id,

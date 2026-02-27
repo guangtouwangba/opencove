@@ -13,7 +13,7 @@ beforeEach(() => {
 })
 
 describe('workspace persistence (write)', () => {
-  it('ignores persistence failures (quota exceeded, disabled storage, etc.)', () => {
+  it('ignores persistence failures (quota exceeded, disabled storage, etc.)', async () => {
     const previousStorage = window.localStorage
 
     class ThrowingStorage extends MockStorage {
@@ -28,9 +28,7 @@ describe('workspace persistence (write)', () => {
       value: new ThrowingStorage(),
     })
 
-    expect(() => {
-      writePersistedState(toPersistedState([], null))
-    }).not.toThrow()
+    await writePersistedState(toPersistedState([], null))
 
     Object.defineProperty(window, 'localStorage', {
       configurable: true,
@@ -39,7 +37,7 @@ describe('workspace persistence (write)', () => {
     })
   })
 
-  it('falls back to persisting without scrollback when quota is exceeded', () => {
+  it('falls back to persisting without scrollback when quota is exceeded', async () => {
     const previousStorage = window.localStorage
 
     class LimitedStorage extends MockStorage {
@@ -103,11 +101,11 @@ describe('workspace persistence (write)', () => {
       'workspace-1',
     )
 
-    const result = writePersistedState(state)
+    const result = await writePersistedState(state)
     expect(result.ok).toBe(true)
     expect(result.ok ? result.level : null).toBe('no_scrollback')
 
-    const restored = readPersistedState()
+    const restored = await readPersistedState()
     expect(restored?.workspaces[0]?.nodes[0]?.scrollback).toBeNull()
 
     Object.defineProperty(window, 'localStorage', {

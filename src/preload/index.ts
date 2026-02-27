@@ -15,6 +15,7 @@ import type {
   ListGitWorktreesResult,
   ListAgentModelsInput,
   ListAgentModelsResult,
+  PersistWriteResult,
   ResizeTerminalInput,
   RemoveGitWorktreeInput,
   SnapshotTerminalInput,
@@ -28,6 +29,7 @@ import type {
   TerminalDoneEvent,
   TerminalExitEvent,
   WorkspaceDirectory,
+  WriteWorkspaceStateRawInput,
   WriteTerminalInput,
 } from '../shared/types/api'
 
@@ -37,6 +39,12 @@ type UnsubscribeFn = () => void
 const coveApi = {
   meta: {
     isTest: process.env.NODE_ENV === 'test',
+  },
+  persistence: {
+    readWorkspaceStateRaw: (): Promise<string | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.persistenceReadWorkspaceStateRaw),
+    writeWorkspaceStateRaw: (payload: WriteWorkspaceStateRawInput): Promise<PersistWriteResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.persistenceWriteWorkspaceStateRaw, payload),
   },
   workspace: {
     selectDirectory: (): Promise<WorkspaceDirectory | null> =>

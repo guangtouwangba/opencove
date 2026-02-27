@@ -236,8 +236,10 @@ test.describe('Workspace Canvas - Minimap & Zoom', () => {
         .poll(
           async () => {
             return await window.evaluate(
-              ({ key, workspaceId }) => {
-                const raw = window.localStorage.getItem(key)
+              async ({ key, workspaceId }) => {
+                void key
+
+                const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
                 if (!raw) {
                   return null
                 }
@@ -298,8 +300,10 @@ test.describe('Workspace Canvas - Minimap & Zoom', () => {
         y: number
         zoom: number
       } | null>(
-        ({ key, workspaceId }) => {
-          const raw = window.localStorage.getItem(key)
+        async ({ key, workspaceId }) => {
+          void key
+
+          const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
           if (!raw) {
             return null
           }

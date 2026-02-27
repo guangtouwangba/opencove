@@ -1,7 +1,7 @@
 import type { PersistedAppState } from '../../types'
-import { STORAGE_KEY } from './constants'
+import { PERSISTED_APP_STATE_FORMAT_VERSION } from './constants'
 import type { PersistWriteResult } from './types'
-import { getStorage, isQuotaExceededError } from './storage'
+import { getPersistencePort } from './port'
 
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -26,74 +26,77 @@ function stripScrollbackFromState(state: PersistedAppState): PersistedAppState {
 
 function settingsOnlyState(state: PersistedAppState): PersistedAppState {
   return {
+    formatVersion: state.formatVersion,
     activeWorkspaceId: state.activeWorkspaceId,
     workspaces: [],
     settings: state.settings,
   }
 }
 
-export function writePersistedState(state: PersistedAppState): PersistWriteResult {
-  const storage = getStorage()
-  if (!storage) {
-    return {
-      ok: false,
-      reason: 'unavailable',
-      message: 'Storage is unavailable; changes will not be saved.',
-    }
-  }
-
-  const raw = JSON.stringify(state)
-
-  try {
-    storage.setItem(STORAGE_KEY, raw)
-    return { ok: true, level: 'full', bytes: raw.length }
-  } catch (error) {
-    if (!isQuotaExceededError(error)) {
-      return { ok: false, reason: 'unknown', message: toErrorMessage(error) }
-    }
-
-    try {
-      const degradedRaw = JSON.stringify(stripScrollbackFromState(state))
-      storage.setItem(STORAGE_KEY, degradedRaw)
-      return { ok: true, level: 'no_scrollback', bytes: degradedRaw.length }
-    } catch (degradedError) {
-      if (!isQuotaExceededError(degradedError)) {
-        return { ok: false, reason: 'unknown', message: toErrorMessage(degradedError) }
-      }
-    }
-
-    try {
-      const minimalRaw = JSON.stringify(settingsOnlyState(state))
-      storage.setItem(STORAGE_KEY, minimalRaw)
-      return { ok: true, level: 'settings_only', bytes: minimalRaw.length }
-    } catch (minimalError) {
-      return {
-        ok: false,
-        reason: isQuotaExceededError(minimalError) ? 'quota' : 'unknown',
-        message: toErrorMessage(minimalError),
-      }
-    }
+function unavailableResult(): PersistWriteResult {
+  return {
+    ok: false,
+    reason: 'unavailable',
+    message: 'Storage is unavailable; changes will not be saved.',
   }
 }
 
-export function writeRawPersistedState(raw: string): PersistWriteResult {
-  const storage = getStorage()
-  if (!storage) {
-    return {
-      ok: false,
-      reason: 'unavailable',
-      message: 'Storage is unavailable; changes will not be saved.',
-    }
+export async function writePersistedState(state: PersistedAppState): Promise<PersistWriteResult> {
+  const port = getPersistencePort()
+  if (!port) {
+    return unavailableResult()
+  }
+
+  const normalizedState: PersistedAppState = {
+    ...state,
+    formatVersion: PERSISTED_APP_STATE_FORMAT_VERSION,
+  }
+
+  const raw = JSON.stringify(normalizedState)
+
+  let fullResult: PersistWriteResult
+  try {
+    fullResult = await port.writeRaw(raw)
+  } catch (error) {
+    return { ok: false, reason: 'unknown', message: toErrorMessage(error) }
+  }
+
+  if (fullResult.ok) {
+    return { ok: true, level: 'full', bytes: raw.length }
+  }
+
+  if (fullResult.reason !== 'quota' && fullResult.reason !== 'payload_too_large') {
+    return fullResult
+  }
+
+  const degradedRaw = JSON.stringify(stripScrollbackFromState(normalizedState))
+  const degradedResult = await port.writeRaw(degradedRaw)
+  if (degradedResult.ok) {
+    return { ok: true, level: 'no_scrollback', bytes: degradedRaw.length }
+  }
+
+  if (degradedResult.reason !== 'quota' && degradedResult.reason !== 'payload_too_large') {
+    return degradedResult
+  }
+
+  const minimalRaw = JSON.stringify(settingsOnlyState(normalizedState))
+  const minimalResult = await port.writeRaw(minimalRaw)
+  if (minimalResult.ok) {
+    return { ok: true, level: 'settings_only', bytes: minimalRaw.length }
+  }
+
+  return minimalResult
+}
+
+export async function writeRawPersistedState(raw: string): Promise<PersistWriteResult> {
+  const port = getPersistencePort()
+  if (!port) {
+    return unavailableResult()
   }
 
   try {
-    storage.setItem(STORAGE_KEY, raw)
-    return { ok: true, level: 'full', bytes: raw.length }
-  } catch {
-    return {
-      ok: false,
-      reason: 'unknown',
-      message: 'Failed to write persisted state.',
-    }
+    return await port.writeRaw(raw)
+  } catch (error) {
+    return { ok: false, reason: 'unknown', message: toErrorMessage(error) }
   }
 }

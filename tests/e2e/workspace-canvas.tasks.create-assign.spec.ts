@@ -64,8 +64,10 @@ test.describe('Workspace Canvas - Tasks (Create & Assign)', () => {
       const taskStatus = taskNode.locator('[data-testid="task-node-status-select"]')
       await expect(taskStatus).toHaveValue('doing')
 
-      const persisted = await window.evaluate(key => {
-        const raw = window.localStorage.getItem(key)
+      const persisted = await window.evaluate(async key => {
+        void key
+
+        const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
         if (!raw) {
           return null
         }
@@ -170,8 +172,10 @@ test.describe('Workspace Canvas - Tasks (Create & Assign)', () => {
       )
       await expect(window.locator('.workspace-task-agent-edge')).toHaveCount(1)
 
-      const persisted = await window.evaluate(key => {
-        const raw = window.localStorage.getItem(key)
+      const persisted = await window.evaluate(async key => {
+        void key
+
+        const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
         if (!raw) {
           return null
         }

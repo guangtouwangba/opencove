@@ -61,54 +61,7 @@ export function useHydrateAppState({
   const [isHydrated, setIsHydrated] = useState(false)
 
   useEffect(() => {
-    const persisted = readPersistedState()
-    if (!persisted) {
-      setIsHydrated(true)
-      return
-    }
-
-    setAgentSettings(persisted.settings)
-
-    if (persisted.workspaces.length === 0) {
-      setIsHydrated(true)
-      return
-    }
-
-    const hasActiveWorkspace = persisted.workspaces.some(
-      workspace => workspace.id === persisted.activeWorkspaceId,
-    )
-    const resolvedActiveWorkspaceId = hasActiveWorkspace
-      ? persisted.activeWorkspaceId
-      : (persisted.workspaces[0]?.id ?? null)
-
-    setWorkspaces(
-      persisted.workspaces.map(workspace => {
-        const sanitizedSpaces = sanitizeWorkspaceSpaces(workspace.spaces)
-        const hasActiveSpace =
-          workspace.activeSpaceId !== null &&
-          sanitizedSpaces.some(space => space.id === workspace.activeSpaceId)
-
-        return {
-          id: workspace.id,
-          name: workspace.name,
-          path: workspace.path,
-          worktreesRoot: workspace.worktreesRoot,
-          nodes: [],
-          viewport: {
-            x: workspace.viewport.x,
-            y: workspace.viewport.y,
-            zoom: workspace.viewport.zoom,
-          },
-          isMinimapVisible: workspace.isMinimapVisible,
-          spaces: sanitizedSpaces,
-          activeSpaceId: hasActiveSpace ? workspace.activeSpaceId : null,
-        }
-      }),
-    )
-    setActiveWorkspaceId(resolvedActiveWorkspaceId)
-
     let isCancelled = false
-
     const hydrateWorkspace = async (
       workspace: PersistedWorkspaceState,
     ): Promise<WorkspaceState> => {
@@ -335,7 +288,13 @@ export function useHydrateAppState({
       )
     }
 
-    const restore = async (): Promise<void> => {
+    const restore = async (
+      persisted: {
+        activeWorkspaceId: string | null
+        workspaces: PersistedWorkspaceState[]
+      },
+      resolvedActiveWorkspaceId: string | null,
+    ): Promise<void> => {
       const activeWorkspace = resolvedActiveWorkspaceId
         ? (persisted.workspaces.find(workspace => workspace.id === resolvedActiveWorkspaceId) ??
           null)
@@ -377,11 +336,67 @@ export function useHydrateAppState({
       )
     }
 
-    void restore().finally(() => {
-      if (!isCancelled) {
-        setIsHydrated(true)
+    const hydrateAppState = async (): Promise<void> => {
+      const persisted = await readPersistedState()
+      if (isCancelled) {
+        return
       }
-    })
+
+      if (!persisted) {
+        setIsHydrated(true)
+        return
+      }
+
+      setAgentSettings(persisted.settings)
+
+      if (persisted.workspaces.length === 0) {
+        setIsHydrated(true)
+        return
+      }
+
+      const hasActiveWorkspace = persisted.workspaces.some(
+        workspace => workspace.id === persisted.activeWorkspaceId,
+      )
+      const resolvedActiveWorkspaceId = hasActiveWorkspace
+        ? persisted.activeWorkspaceId
+        : (persisted.workspaces[0]?.id ?? null)
+
+      setWorkspaces(
+        persisted.workspaces.map(workspace => {
+          const sanitizedSpaces = sanitizeWorkspaceSpaces(workspace.spaces)
+          const hasActiveSpace =
+            workspace.activeSpaceId !== null &&
+            sanitizedSpaces.some(space => space.id === workspace.activeSpaceId)
+
+          return {
+            id: workspace.id,
+            name: workspace.name,
+            path: workspace.path,
+            worktreesRoot: workspace.worktreesRoot,
+            nodes: [],
+            viewport: {
+              x: workspace.viewport.x,
+              y: workspace.viewport.y,
+              zoom: workspace.viewport.zoom,
+            },
+            isMinimapVisible: workspace.isMinimapVisible,
+            spaces: sanitizedSpaces,
+            activeSpaceId: hasActiveSpace ? workspace.activeSpaceId : null,
+          }
+        }),
+      )
+      setActiveWorkspaceId(resolvedActiveWorkspaceId)
+
+      try {
+        await restore(persisted, resolvedActiveWorkspaceId)
+      } finally {
+        if (!isCancelled) {
+          setIsHydrated(true)
+        }
+      }
+    }
+
+    void hydrateAppState()
 
     return () => {
       isCancelled = true

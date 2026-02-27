@@ -46,8 +46,10 @@ test.describe('Workspace Canvas - Node Create (Push-away)', () => {
 
       await expect(window.locator('.task-node')).toHaveCount(2)
 
-      const snapshot = await window.evaluate(key => {
-        const raw = window.localStorage.getItem(key)
+      const snapshot = await window.evaluate(async key => {
+        void key
+
+        const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
         if (!raw) {
           return null
         }

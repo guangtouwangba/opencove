@@ -99,8 +99,10 @@ test.describe('Workspace Canvas - Persistence', () => {
         .poll(
           async () => {
             return await window.evaluate(
-              ({ key, nodeId, expected }) => {
-                const raw = window.localStorage.getItem(key)
+              async ({ key, nodeId, expected }) => {
+                void key
+
+                const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
                 if (!raw) {
                   return false
                 }

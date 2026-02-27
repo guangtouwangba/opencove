@@ -6,6 +6,8 @@ import { writePersistedState } from './write'
 let scheduledPersistedStateProducer: (() => PersistedAppState) | null = null
 let scheduledPersistedStateTimer: number | null = null
 let scheduledPersistedStateOnResult: ((result: PersistWriteResult) => void) | null = null
+let persistFlushInFlight = false
+let persistFlushRequested = false
 
 export function schedulePersistedStateWrite(
   producer: () => PersistedAppState,
@@ -41,10 +43,32 @@ export function flushScheduledPersistedStateWrite(): void {
   const onResult = scheduledPersistedStateOnResult
   scheduledPersistedStateOnResult = null
 
+  if (persistFlushInFlight) {
+    persistFlushRequested = true
+    return
+  }
+
   if (!producer) {
     return
   }
 
-  const result = writePersistedState(producer())
-  onResult?.(result)
+  persistFlushInFlight = true
+
+  void writePersistedState(producer())
+    .then(result => {
+      onResult?.(result)
+    })
+    .finally(() => {
+      persistFlushInFlight = false
+
+      if (!persistFlushRequested) {
+        return
+      }
+
+      persistFlushRequested = false
+
+      if (scheduledPersistedStateProducer) {
+        flushScheduledPersistedStateWrite()
+      }
+    })
 }

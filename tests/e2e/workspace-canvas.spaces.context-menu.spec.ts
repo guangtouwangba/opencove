@@ -119,8 +119,10 @@ test.describe('Workspace Canvas - Spaces (Menu & Switch)', () => {
       await expect(window.locator('.workspace-space-switcher')).toHaveCount(0)
       await expect(window.locator('.workspace-space-region')).toHaveCount(0)
 
-      const spaceCount = await window.evaluate(key => {
-        const raw = window.localStorage.getItem(key)
+      const spaceCount = await window.evaluate(async key => {
+        void key
+
+        const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
         if (!raw) {
           return 0
         }

@@ -1,27 +1,27 @@
-import { expect, test, _electron as electron } from '@playwright/test'
-import path from 'path'
-
-const electronAppPath = path.resolve(__dirname, '../../')
-const storageKey = 'cove:m0:workspace-state'
+import { expect, test } from '@playwright/test'
+import { launchApp } from './workspace-canvas.helpers'
 
 test.describe('Settings', () => {
   test('persists agent provider and list-based custom model options', async () => {
-    const electronApp = await electron.launch({
-      args: [electronAppPath],
-      env: {
-        ...process.env,
-        NODE_ENV: 'test',
-        COVE_TEST_WORKSPACE: path.resolve(__dirname, '../../'),
-      },
-    })
-
-    const window = await electronApp.firstWindow()
+    const { electronApp, window } = await launchApp()
 
     try {
-      await window.waitForLoadState('domcontentloaded')
-      await window.evaluate(key => {
-        window.localStorage.removeItem(key)
-      }, storageKey)
+      const resetResult = await window.evaluate(async () => {
+        return await window.coveApi.persistence.writeWorkspaceStateRaw({
+          raw: JSON.stringify({
+            formatVersion: 1,
+            activeWorkspaceId: null,
+            workspaces: [],
+            settings: {},
+          }),
+        })
+      })
+
+      if (!resetResult.ok) {
+        throw new Error(
+          `Failed to reset workspace state: ${resetResult.reason}: ${resetResult.message}`,
+        )
+      }
       await window.reload({ waitUntil: 'domcontentloaded' })
 
       const settingsButton = window.locator('.workspace-sidebar__settings')
@@ -88,38 +88,54 @@ test.describe('Settings', () => {
       await expect(window.locator('.workspace-sidebar__agent-provider')).toHaveText('Codex')
       await expect(window.locator('.workspace-sidebar__agent-model')).toHaveText('gpt-5.2-codex')
 
+      const readPersistedSettings = async () =>
+        await window.evaluate(async () => {
+          const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+          if (!raw) {
+            return null
+          }
+
+          try {
+            const parsed = JSON.parse(raw) as {
+              settings?: {
+                defaultProvider?: string
+                customModelEnabledByProvider?: {
+                  codex?: boolean
+                }
+                customModelByProvider?: {
+                  codex?: string
+                }
+                customModelOptionsByProvider?: {
+                  codex?: string[]
+                }
+                taskTitleProvider?: string
+                taskTitleModel?: string
+                taskTagOptions?: string[]
+                normalizeZoomOnTerminalClick?: boolean
+                canvasInputMode?: string
+              }
+            }
+            return parsed.settings ?? null
+          } catch {
+            return null
+          }
+        })
+
+      await expect.poll(readPersistedSettings).toEqual(
+        expect.objectContaining({
+          defaultProvider: 'codex',
+          taskTitleProvider: 'codex',
+          taskTitleModel: 'gpt-5.2-codex',
+          normalizeZoomOnTerminalClick: false,
+          canvasInputMode: 'trackpad',
+        }),
+      )
+
       await window.reload({ waitUntil: 'domcontentloaded' })
       await expect(window.locator('.workspace-sidebar__agent-provider')).toHaveText('Codex')
       await expect(window.locator('.workspace-sidebar__agent-model')).toHaveText('gpt-5.2-codex')
 
-      const persistedSettings = await window.evaluate(key => {
-        const raw = window.localStorage.getItem(key)
-        if (!raw) {
-          return null
-        }
-
-        const parsed = JSON.parse(raw) as {
-          settings?: {
-            defaultProvider?: string
-            customModelEnabledByProvider?: {
-              codex?: boolean
-            }
-            customModelByProvider?: {
-              codex?: string
-            }
-            customModelOptionsByProvider?: {
-              codex?: string[]
-            }
-            taskTitleProvider?: string
-            taskTitleModel?: string
-            taskTagOptions?: string[]
-            normalizeZoomOnTerminalClick?: boolean
-            canvasInputMode?: string
-          }
-        }
-
-        return parsed.settings ?? null
-      }, storageKey)
+      const persistedSettings = await readPersistedSettings()
 
       expect(persistedSettings?.defaultProvider).toBe('codex')
       expect(persistedSettings?.customModelEnabledByProvider?.codex).toBe(true)

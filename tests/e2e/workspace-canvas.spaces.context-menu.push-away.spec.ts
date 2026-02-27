@@ -104,8 +104,10 @@ test.describe('Workspace Canvas - Spaces (Push Away)', () => {
       await expect
         .poll(async () => {
           return await window.evaluate(
-            ({ key }) => {
-              const raw = window.localStorage.getItem(key)
+            async ({ key }) => {
+              void key
+
+              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return false
               }

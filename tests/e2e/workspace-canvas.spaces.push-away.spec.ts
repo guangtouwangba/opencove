@@ -66,8 +66,10 @@ test.describe('Workspace Canvas - Spaces (Push-away)', () => {
 
       await expect
         .poll(async () => {
-          return await window.evaluate(key => {
-            const raw = window.localStorage.getItem(key)
+          return await window.evaluate(async key => {
+            void key
+
+            const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
             if (!raw) {
               return false
             }
@@ -172,8 +174,10 @@ test.describe('Workspace Canvas - Spaces (Push-away)', () => {
 
       await expect
         .poll(async () => {
-          return await window.evaluate(key => {
-            const raw = window.localStorage.getItem(key)
+          return await window.evaluate(async key => {
+            void key
+
+            const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
             if (!raw) {
               return false
             }
@@ -272,8 +276,10 @@ test.describe('Workspace Canvas - Spaces (Push-away)', () => {
 
       await expect
         .poll(async () => {
-          return await window.evaluate(key => {
-            const raw = window.localStorage.getItem(key)
+          return await window.evaluate(async key => {
+            void key
+
+            const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
             if (!raw) {
               return null
             }
@@ -327,8 +333,10 @@ test.describe('Workspace Canvas - Spaces (Push-away)', () => {
 
       await expect
         .poll(async () => {
-          return await window.evaluate(key => {
-            const raw = window.localStorage.getItem(key)
+          return await window.evaluate(async key => {
+            void key
+
+            const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
             if (!raw) {
               return false
             }

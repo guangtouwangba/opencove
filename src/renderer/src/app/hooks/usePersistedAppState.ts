@@ -51,9 +51,11 @@ export function usePersistedAppState({
       const message =
         result.reason === 'unavailable'
           ? 'Storage is unavailable; changes will not be saved.'
-          : result.reason === 'quota'
-            ? 'Storage quota exceeded; unable to persist workspace state.'
-            : `Persistence failed: ${result.message}`
+          : result.reason === 'quota' || result.reason === 'payload_too_large'
+            ? 'Storage limit exceeded; unable to persist workspace state.'
+            : result.reason === 'io'
+              ? `Persistence I/O failed: ${result.message}`
+              : `Persistence failed: ${result.message}`
 
       const next: PersistNotice = { tone: 'error', message }
       return previous?.tone === next.tone && previous.message === next.message ? previous : next

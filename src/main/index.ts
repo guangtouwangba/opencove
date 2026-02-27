@@ -7,6 +7,10 @@ import { registerIpcHandlers } from './ipc/registerIpcHandlers'
 
 let ipcDisposable: ReturnType<typeof registerIpcHandlers> | null = null
 
+if (process.env.NODE_ENV === 'test' && process.env['COVE_TEST_USER_DATA_DIR']) {
+  app.setPath('userData', resolve(process.env['COVE_TEST_USER_DATA_DIR']))
+}
+
 const EXTERNAL_PROTOCOL_ALLOWLIST = new Set(['http:', 'https:', 'mailto:'])
 const E2E_OFFSCREEN_COORDINATE = -50_000
 type E2EWindowMode = 'normal' | 'inactive' | 'hidden' | 'offscreen'

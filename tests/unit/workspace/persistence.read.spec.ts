@@ -16,7 +16,7 @@ beforeEach(() => {
 })
 
 describe('workspace persistence (read/normalize)', () => {
-  it('writes and reads persisted state', () => {
+  it('writes and reads persisted state', async () => {
     const workspaces: WorkspaceState[] = [
       {
         id: 'workspace-1',
@@ -131,9 +131,9 @@ describe('workspace persistence (read/normalize)', () => {
       canvasInputMode: 'trackpad',
     })
 
-    writePersistedState(persisted)
+    await writePersistedState(persisted)
 
-    const restored = readPersistedState()
+    const restored = await readPersistedState()
 
     expect(restored).not.toBeNull()
     expect(restored?.activeWorkspaceId).toBe('workspace-1')
@@ -164,7 +164,7 @@ describe('workspace persistence (read/normalize)', () => {
     expect(restored?.settings.canvasInputMode).toBe('trackpad')
   })
 
-  it('truncates oversized terminal scrollback', () => {
+  it('truncates oversized terminal scrollback', async () => {
     const prefix = 'old\n'
     const suffix = 'tail\n'
     const oversized = `${prefix}${'x'.repeat(260_000)}${suffix}`
@@ -206,9 +206,9 @@ describe('workspace persistence (read/normalize)', () => {
       'workspace-1',
     )
 
-    writePersistedState(persisted)
+    await writePersistedState(persisted)
 
-    const restored = readPersistedState()
+    const restored = await readPersistedState()
     const restoredScrollback = restored?.workspaces[0]?.nodes[0]?.scrollback ?? ''
 
     expect(restoredScrollback.length).toBe(200_000)
@@ -216,15 +216,15 @@ describe('workspace persistence (read/normalize)', () => {
     expect(restoredScrollback).not.toContain(prefix)
   })
 
-  it('falls back to default settings when persisted settings are missing', () => {
-    writeRawPersistedState(
+  it('falls back to default settings when persisted settings are missing', async () => {
+    await writeRawPersistedState(
       JSON.stringify({
         activeWorkspaceId: null,
         workspaces: [],
       }),
     )
 
-    const restored = readPersistedState()
+    const restored = await readPersistedState()
     expect(restored).not.toBeNull()
     expect(restored?.settings.defaultProvider).toBe('codex')
     expect(restored?.settings.customModelEnabledByProvider['claude-code']).toBe(false)
@@ -244,8 +244,8 @@ describe('workspace persistence (read/normalize)', () => {
     expect(restored?.settings.canvasInputMode).toBe('auto')
   })
 
-  it('fills missing workspace viewport fields for legacy payload', () => {
-    writeRawPersistedState(
+  it('fills missing workspace viewport fields for legacy payload', async () => {
+    await writeRawPersistedState(
       JSON.stringify({
         activeWorkspaceId: 'workspace-1',
         workspaces: [
@@ -260,7 +260,7 @@ describe('workspace persistence (read/normalize)', () => {
       }),
     )
 
-    const restored = readPersistedState()
+    const restored = await readPersistedState()
     expect(restored).not.toBeNull()
     expect(restored?.workspaces).toHaveLength(1)
     expect(restored?.workspaces[0].viewport).toEqual(DEFAULT_WORKSPACE_VIEWPORT)
@@ -269,8 +269,8 @@ describe('workspace persistence (read/normalize)', () => {
     expect(restored?.workspaces[0].activeSpaceId).toBeNull()
   })
 
-  it('persists workspace spaces and active space id', () => {
-    writeRawPersistedState(
+  it('persists workspace spaces and active space id', async () => {
+    await writeRawPersistedState(
       JSON.stringify({
         activeWorkspaceId: 'workspace-1',
         workspaces: [
@@ -319,7 +319,7 @@ describe('workspace persistence (read/normalize)', () => {
       }),
     )
 
-    const restored = readPersistedState()
+    const restored = await readPersistedState()
     expect(restored).not.toBeNull()
     expect(restored?.workspaces[0].spaces).toHaveLength(1)
     expect(restored?.workspaces[0].spaces[0].name).toBe('Backlog')
@@ -328,8 +328,8 @@ describe('workspace persistence (read/normalize)', () => {
     expect(restored?.workspaces[0].activeSpaceId).toBe('space-1')
   })
 
-  it('returns null when stored json is invalid', () => {
-    writeRawPersistedState('{')
-    expect(readPersistedState()).toBeNull()
+  it('returns null when stored json is invalid', async () => {
+    await writeRawPersistedState('{')
+    expect(await readPersistedState()).toBeNull()
   })
 })

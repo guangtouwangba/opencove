@@ -78,8 +78,10 @@ test.describe('Workspace Canvas - Spaces (Node Resize)', () => {
       )
       await window.mouse.up()
 
-      const result = await window.evaluate(key => {
-        const raw = window.localStorage.getItem(key)
+      const result = await window.evaluate(async key => {
+        void key
+
+        const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
         if (!raw) {
           return null
         }

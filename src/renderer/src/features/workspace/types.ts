@@ -137,6 +137,7 @@ export interface PersistedTerminalNode {
 }
 
 export interface PersistedAppState {
+  formatVersion: number
   activeWorkspaceId: string | null
   workspaces: PersistedWorkspaceState[]
   settings: AgentSettings

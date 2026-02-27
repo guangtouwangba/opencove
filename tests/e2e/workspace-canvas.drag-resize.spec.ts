@@ -64,8 +64,10 @@ test.describe('Workspace Canvas - Drag & Resize', () => {
       await window.mouse.move(rightStartX + 120, rightStartY + 80)
       await window.mouse.up()
 
-      const widthResizedNode = await window.evaluate(key => {
-        const raw = window.localStorage.getItem(key)
+      const widthResizedNode = await window.evaluate(async key => {
+        void key
+
+        const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
         if (!raw) {
           return null
         }
@@ -101,8 +103,10 @@ test.describe('Workspace Canvas - Drag & Resize', () => {
       await window.mouse.move(bottomStartX + 120, bottomStartY + 80)
       await window.mouse.up()
 
-      const heightResizedNode = await window.evaluate(key => {
-        const raw = window.localStorage.getItem(key)
+      const heightResizedNode = await window.evaluate(async key => {
+        void key
+
+        const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
         if (!raw) {
           return null
         }

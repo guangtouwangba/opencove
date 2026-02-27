@@ -108,8 +108,10 @@ test.describe('Workspace Canvas - Spaces (Auto Resize on Create)', () => {
       await expect
         .poll(async () => {
           return await window.evaluate(
-            ({ key }) => {
-              const raw = window.localStorage.getItem(key)
+            async ({ key }) => {
+              void key
+
+              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return null
               }

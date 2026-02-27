@@ -57,8 +57,10 @@ test.describe('Workspace Canvas - Spaces (Drop Ownership)', () => {
       await expect
         .poll(async () => {
           return await window.evaluate(
-            ({ key, spaceId, nodeId }) => {
-              const raw = window.localStorage.getItem(key)
+            async ({ key, spaceId, nodeId }) => {
+              void key
+
+              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return false
               }
@@ -92,8 +94,10 @@ test.describe('Workspace Canvas - Spaces (Drop Ownership)', () => {
       await expect
         .poll(async () => {
           return await window.evaluate(
-            ({ key, spaceId, nodeId }) => {
-              const raw = window.localStorage.getItem(key)
+            async ({ key, spaceId, nodeId }) => {
+              void key
+
+              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return null
               }
@@ -169,8 +173,10 @@ test.describe('Workspace Canvas - Spaces (Drop Ownership)', () => {
       await expect
         .poll(async () => {
           return await window.evaluate(
-            ({ key, nodeId, spaceId }) => {
-              const raw = window.localStorage.getItem(key)
+            async ({ key, nodeId, spaceId }) => {
+              void key
+
+              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return false
               }
@@ -283,8 +289,10 @@ test.describe('Workspace Canvas - Spaces (Drop Ownership)', () => {
       await expect
         .poll(async () => {
           return await window.evaluate(
-            ({ key, spaceId, nodeAId, nodeBId }) => {
-              const raw = window.localStorage.getItem(key)
+            async ({ key, spaceId, nodeAId, nodeBId }) => {
+              void key
+
+              const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
               if (!raw) {
                 return false
               }

@@ -84,8 +84,10 @@ test.describe('Workspace Canvas - Tasks (Edit & Delete)', () => {
       await window.mouse.move(bottomStartX + 40, bottomStartY + 100)
       await window.mouse.up()
 
-      const resizedTask = await window.evaluate(key => {
-        const raw = window.localStorage.getItem(key)
+      const resizedTask = await window.evaluate(async key => {
+        void key
+
+        const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
         if (!raw) {
           return null
         }

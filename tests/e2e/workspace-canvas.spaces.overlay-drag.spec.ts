@@ -119,8 +119,10 @@ test.describe('Workspace Canvas - Spaces (Overlay & Drag)', () => {
         rectY: number
       } | null> => {
         return await window.evaluate(
-          ({ key, nodeId, spaceId }) => {
-            const raw = window.localStorage.getItem(key)
+          async ({ key, nodeId, spaceId }) => {
+            void key
+
+            const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
             if (!raw) {
               return null
             }

@@ -1,4 +1,6 @@
 import { _electron as electron, type ElectronApplication, type Page } from '@playwright/test'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import path from 'path'
 
 const electronAppPath = path.resolve(__dirname, '../../')
@@ -6,6 +8,10 @@ export const testWorkspacePath = path.resolve(__dirname, '../../')
 export const storageKey = 'cove:m0:workspace-state'
 export const seededWorkspaceId = 'workspace-seeded'
 type E2EWindowMode = 'normal' | 'inactive' | 'offscreen' | 'hidden'
+
+async function createTestUserDataDir(): Promise<string> {
+  return await mkdtemp(path.join(tmpdir(), 'cove-e2e-user-data-'))
+}
 
 export interface SeedAgentData {
   provider: 'claude-code' | 'codex'
@@ -75,15 +81,33 @@ export interface SeedWorkspace {
 export async function launchApp(options?: {
   windowMode?: E2EWindowMode
 }): Promise<{ electronApp: ElectronApplication; window: Page }> {
-  const electronApp = await electron.launch({
-    args: [electronAppPath],
-    env: {
-      ...process.env,
-      NODE_ENV: 'test',
-      COVE_TEST_WORKSPACE: testWorkspacePath,
-      ...(options?.windowMode ? { COVE_E2E_WINDOW_MODE: options.windowMode } : {}),
-    },
-  })
+  const userDataDir = await createTestUserDataDir()
+  let electronApp: ElectronApplication
+
+  try {
+    electronApp = await electron.launch({
+      args: [electronAppPath],
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+        COVE_TEST_WORKSPACE: testWorkspacePath,
+        COVE_TEST_USER_DATA_DIR: userDataDir,
+        ...(options?.windowMode ? { COVE_E2E_WINDOW_MODE: options.windowMode } : {}),
+      },
+    })
+  } catch (error) {
+    await rm(userDataDir, { recursive: true, force: true })
+    throw error
+  }
+
+  const originalClose = electronApp.close.bind(electronApp)
+  ;(electronApp as unknown as { close: () => Promise<void> }).close = async () => {
+    try {
+      await originalClose()
+    } finally {
+      await rm(userDataDir, { recursive: true, force: true })
+    }
+  }
 
   const window = await electronApp.firstWindow()
   await window.waitForLoadState('domcontentloaded')
@@ -100,6 +124,7 @@ export async function seedWorkspaceState(
   },
 ): Promise<void> {
   const seededState = {
+    formatVersion: 1,
     activeWorkspaceId: payload.activeWorkspaceId,
     workspaces: payload.workspaces,
     ...(payload.settings ? { settings: payload.settings } : {}),
@@ -110,73 +135,71 @@ export async function seedWorkspaceState(
       return false
     }
 
-    await window.evaluate(
-      ({ key, state }) => {
-        window.localStorage.setItem(key, JSON.stringify(state))
-      },
-      {
-        key: storageKey,
-        state: seededState,
-      },
-    )
+    const writeResult = await window.evaluate(async state => {
+      return await window.coveApi.persistence.writeWorkspaceStateRaw({
+        raw: JSON.stringify(state),
+      })
+    }, seededState)
+
+    if (!writeResult.ok) {
+      throw new Error(
+        `Failed to seed workspace state: ${writeResult.reason}: ${writeResult.message}`,
+      )
+    }
 
     await window.reload({ waitUntil: 'domcontentloaded' })
 
-    const seededReady = await window.evaluate(
-      ({ key, expectedWorkspaces }) => {
-        const raw = window.localStorage.getItem(key)
-        if (!raw) {
+    const expectedWorkspaces = payload.workspaces.map(workspace => ({
+      id: workspace.id,
+      nodeIds: workspace.nodes.map(node => node.id),
+    }))
+
+    const seededReady = await window.evaluate(async expectedWorkspaces => {
+      const raw = await window.coveApi.persistence.readWorkspaceStateRaw()
+      if (!raw) {
+        return false
+      }
+
+      try {
+        const parsed = JSON.parse(raw) as {
+          workspaces?: Array<{
+            id?: string
+            nodes?: Array<{
+              id?: string
+            }>
+          }>
+        }
+
+        if (!Array.isArray(parsed.workspaces)) {
           return false
         }
 
-        try {
-          const parsed = JSON.parse(raw) as {
-            workspaces?: Array<{
-              id?: string
-              nodes?: Array<{
-                id?: string
-              }>
-            }>
-          }
+        const workspaceById = new Map(
+          parsed.workspaces
+            .filter(workspace => typeof workspace.id === 'string')
+            .map(workspace => [workspace.id as string, workspace]),
+        )
 
-          if (!Array.isArray(parsed.workspaces)) {
+        return expectedWorkspaces.every(expectedWorkspace => {
+          const loadedWorkspace = workspaceById.get(expectedWorkspace.id)
+          if (!loadedWorkspace || !Array.isArray(loadedWorkspace.nodes)) {
             return false
           }
 
-          const workspaceById = new Map(
-            parsed.workspaces
-              .filter(workspace => typeof workspace.id === 'string')
-              .map(workspace => [workspace.id as string, workspace]),
-          )
+          const loadedNodeIds = loadedWorkspace.nodes
+            .map(node => (typeof node.id === 'string' ? node.id : ''))
+            .filter(id => id.length > 0)
 
-          return expectedWorkspaces.every(expectedWorkspace => {
-            const loadedWorkspace = workspaceById.get(expectedWorkspace.id)
-            if (!loadedWorkspace || !Array.isArray(loadedWorkspace.nodes)) {
-              return false
-            }
+          if (loadedNodeIds.length !== expectedWorkspace.nodeIds.length) {
+            return false
+          }
 
-            const loadedNodeIds = loadedWorkspace.nodes
-              .map(node => (typeof node.id === 'string' ? node.id : ''))
-              .filter(id => id.length > 0)
-
-            if (loadedNodeIds.length !== expectedWorkspace.nodeIds.length) {
-              return false
-            }
-
-            return expectedWorkspace.nodeIds.every(nodeId => loadedNodeIds.includes(nodeId))
-          })
-        } catch {
-          return false
-        }
-      },
-      {
-        key: storageKey,
-        expectedWorkspaces: payload.workspaces.map(workspace => ({
-          id: workspace.id,
-          nodeIds: workspace.nodes.map(node => node.id),
-        })),
-      },
-    )
+          return expectedWorkspace.nodeIds.every(nodeId => loadedNodeIds.includes(nodeId))
+        })
+      } catch {
+        return false
+      }
+    }, expectedWorkspaces)
 
     const workspaceCount = await window.locator('.workspace-item').count()
     if (seededReady && workspaceCount >= payload.workspaces.length) {

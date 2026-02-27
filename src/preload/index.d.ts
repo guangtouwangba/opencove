@@ -13,6 +13,7 @@ import type {
   ListGitWorktreesResult,
   ListAgentModelsInput,
   ListAgentModelsResult,
+  PersistWriteResult,
   ResizeTerminalInput,
   RemoveGitWorktreeInput,
   SnapshotTerminalInput,
@@ -26,6 +27,7 @@ import type {
   TerminalDoneEvent,
   TerminalExitEvent,
   WorkspaceDirectory,
+  WriteWorkspaceStateRawInput,
   WriteTerminalInput,
 } from '../shared/types/api'
 
@@ -34,6 +36,10 @@ type UnsubscribeFn = () => void
 export interface CoveApi {
   meta: {
     isTest: boolean
+  }
+  persistence: {
+    readWorkspaceStateRaw: () => Promise<string | null>
+    writeWorkspaceStateRaw: (payload: WriteWorkspaceStateRawInput) => Promise<PersistWriteResult>
   }
   workspace: {
     selectDirectory: () => Promise<WorkspaceDirectory | null>
