@@ -97,6 +97,7 @@ export function useWorkspaceCanvasSelectionDraft({
     (event: React.PointerEvent<HTMLDivElement>) => {
       const canStartBoxSelection =
         isTrackpadCanvasMode || event.shiftKey || isShiftPressedRef.current
+
       if (event.button !== 0 || !canStartBoxSelection) {
         return
       }

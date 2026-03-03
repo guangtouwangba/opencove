@@ -1,4 +1,5 @@
 import React from 'react'
+import { FolderX } from 'lucide-react'
 
 export function ProjectContextMenu({
   workspaceId,
@@ -32,7 +33,8 @@ export function ProjectContextMenu({
           onRequestRemove(workspaceId)
         }}
       >
-        Remove Project
+        <FolderX className="workspace-context-menu__icon" aria-hidden="true" />
+        <span className="workspace-context-menu__label">Remove Project</span>
       </button>
     </div>
   )

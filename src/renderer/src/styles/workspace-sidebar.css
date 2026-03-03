@@ -38,7 +38,6 @@
 
 .workspace-sidebar__header button,
 .workspace-empty-state button,
-.workspace-context-menu button,
 .workspace-empty-selection-prompt button,
 .workspace-sidebar__settings,
 .settings-panel button {
@@ -53,7 +52,6 @@
 
 .workspace-sidebar__header button:hover,
 .workspace-empty-state button:hover,
-.workspace-context-menu button:hover,
 .workspace-empty-selection-prompt button:hover,
 .workspace-sidebar__settings:hover,
 .settings-panel button:hover {

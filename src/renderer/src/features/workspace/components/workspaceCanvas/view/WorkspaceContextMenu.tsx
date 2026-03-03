@@ -1,4 +1,5 @@
 import React from 'react'
+import { Group, ListTodo, Play, Terminal, X } from 'lucide-react'
 import type { ContextMenuState } from '../types'
 
 interface WorkspaceContextMenuProps {
@@ -41,7 +42,8 @@ export function WorkspaceContextMenu({
               void createTerminalNode()
             }}
           >
-            New Terminal
+            <Terminal className="workspace-context-menu__icon" aria-hidden="true" />
+            <span className="workspace-context-menu__label">New Terminal</span>
           </button>
           <button
             type="button"
@@ -50,7 +52,8 @@ export function WorkspaceContextMenu({
               openTaskCreator()
             }}
           >
-            New Task
+            <ListTodo className="workspace-context-menu__icon" aria-hidden="true" />
+            <span className="workspace-context-menu__label">New Task</span>
           </button>
           <button
             type="button"
@@ -59,7 +62,8 @@ export function WorkspaceContextMenu({
               openAgentLauncher()
             }}
           >
-            Run Agent
+            <Play className="workspace-context-menu__icon" aria-hidden="true" />
+            <span className="workspace-context-menu__label">Run Agent</span>
           </button>
         </>
       ) : (
@@ -71,7 +75,8 @@ export function WorkspaceContextMenu({
               createSpaceFromSelectedNodes()
             }}
           >
-            Create Space with Selected
+            <Group className="workspace-context-menu__icon" aria-hidden="true" />
+            <span className="workspace-context-menu__label">Create Space with Selected</span>
           </button>
           <button
             type="button"
@@ -81,7 +86,8 @@ export function WorkspaceContextMenu({
               closeContextMenu()
             }}
           >
-            Clear Selection
+            <X className="workspace-context-menu__icon" aria-hidden="true" />
+            <span className="workspace-context-menu__label">Clear Selection</span>
           </button>
         </>
       )}

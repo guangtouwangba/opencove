@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type JSX } from 'react'
+import { RotateCcw, Trash2 } from 'lucide-react'
 import type { AgentProvider } from '../../../settings/agentConfig'
 import type { AgentRuntimeStatus, TaskAgentSessionRecord } from '../../types'
 import { providerLabel, toAgentRuntimeLabel } from '../workspaceCanvas/helpers'
@@ -179,7 +180,8 @@ export function TaskNodeAgentSessions({
               setAgentSessionMenu(null)
             }}
           >
-            Resume
+            <RotateCcw className="workspace-context-menu__icon" aria-hidden="true" />
+            <span className="workspace-context-menu__label">Resume</span>
           </button>
           <button
             type="button"
@@ -189,7 +191,8 @@ export function TaskNodeAgentSessions({
               setAgentSessionMenu(null)
             }}
           >
-            Remove Record
+            <Trash2 className="workspace-context-menu__icon" aria-hidden="true" />
+            <span className="workspace-context-menu__label">Remove Record</span>
           </button>
         </div>
       ) : null}

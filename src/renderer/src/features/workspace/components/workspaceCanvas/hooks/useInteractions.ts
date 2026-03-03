@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import type { Edge, Node, ReactFlowInstance } from '@xyflow/react'
 import type { TerminalNodeData, WorkspaceSpaceState } from '../../../types'
 import type {
@@ -177,8 +177,76 @@ export function useWorkspaceCanvasInteractions({
     setEmptySelectionPrompt,
   })
 
+  const paneDragRef = useRef<{
+    startX: number
+    startY: number
+    didMove: boolean
+  } | null>(null)
+
+  const ignoreNextPaneClickRef = useRef(false)
+
+  const handleCanvasPointerDownCaptureWithDragGuard = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (
+        event.button === 0 &&
+        !isTrackpadCanvasMode &&
+        !event.shiftKey &&
+        !isShiftPressedRef.current &&
+        event.target instanceof Element &&
+        !event.target.closest('.react-flow__node') &&
+        (event.target.closest('.react-flow__pane') || event.target.closest('.react-flow__renderer'))
+      ) {
+        paneDragRef.current = {
+          startX: event.clientX,
+          startY: event.clientY,
+          didMove: false,
+        }
+      } else {
+        paneDragRef.current = null
+      }
+
+      handleCanvasPointerDownCapture(event)
+    },
+    [handleCanvasPointerDownCapture, isShiftPressedRef, isTrackpadCanvasMode],
+  )
+
+  const handleCanvasPointerMoveCaptureWithDragGuard = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const draft = paneDragRef.current
+      if (draft && !draft.didMove) {
+        const dx = event.clientX - draft.startX
+        const dy = event.clientY - draft.startY
+        if (Math.hypot(dx, dy) > 6) {
+          draft.didMove = true
+        }
+      }
+
+      handleCanvasPointerMoveCapture(event)
+    },
+    [handleCanvasPointerMoveCapture],
+  )
+
+  const handleCanvasPointerUpCaptureWithDragGuard = useCallback(() => {
+    const draft = paneDragRef.current
+    paneDragRef.current = null
+
+    if (draft?.didMove) {
+      ignoreNextPaneClickRef.current = true
+      window.setTimeout(() => {
+        ignoreNextPaneClickRef.current = false
+      }, 0)
+    }
+
+    handleCanvasPointerUpCapture()
+  }, [handleCanvasPointerUpCapture])
+
   const handlePaneClick = useCallback(
     (_event: React.MouseEvent | MouseEvent) => {
+      if (ignoreNextPaneClickRef.current) {
+        ignoreNextPaneClickRef.current = false
+        return
+      }
+
       clearNodeSelection()
       setContextMenu(null)
       setEmptySelectionPrompt(null)
@@ -309,9 +377,9 @@ export function useWorkspaceCanvasInteractions({
     handleNodeContextMenu,
     handlePaneContextMenu,
     handleSelectionChange,
-    handleCanvasPointerDownCapture,
-    handleCanvasPointerMoveCapture,
-    handleCanvasPointerUpCapture,
+    handleCanvasPointerDownCapture: handleCanvasPointerDownCaptureWithDragGuard,
+    handleCanvasPointerMoveCapture: handleCanvasPointerMoveCaptureWithDragGuard,
+    handleCanvasPointerUpCapture: handleCanvasPointerUpCaptureWithDragGuard,
     handlePaneClick,
     createTerminalNode,
   }
