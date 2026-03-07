@@ -81,7 +81,7 @@ describe('main process lifecycle', () => {
     app.emit('window-all-closed')
 
     if (process.env['NODE_ENV'] === 'test' || process.platform !== 'darwin') {
-      expect(dispose).toHaveBeenCalledTimes(1)
+      expect(dispose).not.toHaveBeenCalled()
       expect(app.quit).toHaveBeenCalledTimes(1)
     } else {
       expect(dispose).not.toHaveBeenCalled()
@@ -89,6 +89,9 @@ describe('main process lifecycle', () => {
     }
 
     app.emit('before-quit')
+    expect(dispose).not.toHaveBeenCalled()
+
+    app.emit('will-quit')
     expect(dispose).toHaveBeenCalledTimes(1)
   })
 
@@ -184,6 +187,9 @@ describe('main process lifecycle', () => {
       expect(webPreferences.backgroundThrottling).toBe(false)
 
       app.emit('before-quit')
+      expect(dispose).not.toHaveBeenCalled()
+
+      app.emit('will-quit')
       expect(dispose).toHaveBeenCalledTimes(1)
     } finally {
       if (previousNoFocus === undefined) {
@@ -302,6 +308,9 @@ describe('main process lifecycle', () => {
       expect(webPreferences.backgroundThrottling).toBe(false)
 
       app.emit('before-quit')
+      expect(dispose).not.toHaveBeenCalled()
+
+      app.emit('will-quit')
       expect(dispose).toHaveBeenCalledTimes(1)
     } finally {
       if (previousNoFocus === undefined) {
@@ -423,6 +432,9 @@ describe('main process lifecycle', () => {
       expect(webPreferences.backgroundThrottling).toBe(false)
 
       app.emit('before-quit')
+      expect(dispose).not.toHaveBeenCalled()
+
+      app.emit('will-quit')
       expect(dispose).toHaveBeenCalledTimes(1)
     } finally {
       if (previousNoFocus === undefined) {
