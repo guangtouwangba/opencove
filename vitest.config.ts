@@ -9,6 +9,10 @@ export default defineConfig({
     // 全局 API（describe, it, expect 等无需手动导入）
     globals: true,
 
+    esbuild: {
+      jsx: 'automatic',
+    },
+
     // 自动加载 setup 文件
     setupFiles: ['./tests/setup.ts'],
 

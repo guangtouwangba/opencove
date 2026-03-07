@@ -2,11 +2,14 @@ import React, { useEffect, useMemo, useState, type JSX } from 'react'
 import { RotateCcw, Trash2 } from 'lucide-react'
 import type { AgentProvider } from '@contexts/settings/domain/agentSettings'
 import { isResumeSessionBindingVerified } from '@contexts/agent/domain/agentResumeBinding'
-import type { AgentRuntimeStatus, TaskAgentSessionRecord } from '@renderer/features/workspace/types'
+import type {
+  AgentRuntimeStatus,
+  TaskAgentSessionRecord,
+} from '@contexts/workspace/presentation/renderer/types'
 import {
   providerLabel,
   toAgentRuntimeLabel,
-} from '@renderer/features/workspace/components/workspaceCanvas/helpers'
+} from '@contexts/workspace/presentation/renderer/components/workspaceCanvas/helpers'
 import { formatTaskTimestamp, resolveAgentSessionTone } from './helpers'
 
 interface LinkedAgentSummary {

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { DEFAULT_AGENT_SETTINGS } from '../../../src/renderer/src/features/settings/agentConfig'
-import type { WorkspaceState } from '../../../src/renderer/src/features/workspace/types'
+import type { WorkspaceState } from '../../../src/contexts/workspace/presentation/renderer/types'
 import { installMockStorage } from '../workspace/persistenceTestStorage'
 
 function createDeferred<T>() {

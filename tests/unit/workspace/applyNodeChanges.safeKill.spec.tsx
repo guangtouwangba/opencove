@@ -5,7 +5,7 @@ import type { Node } from '@xyflow/react'
 import type {
   TerminalNodeData,
   WorkspaceSpaceState,
-} from '../../../src/renderer/src/features/workspace/types'
+} from '../../../src/contexts/workspace/presentation/renderer/types'
 
 vi.mock('@xyflow/react', () => {
   return {
@@ -59,7 +59,7 @@ describe('useWorkspaceCanvasApplyNodeChanges', () => {
     })
 
     const { useWorkspaceCanvasApplyNodeChanges } =
-      await import('../../../src/renderer/src/features/workspace/components/workspaceCanvas/hooks/useApplyNodeChanges')
+      await import('../../../src/contexts/workspace/presentation/renderer/components/workspaceCanvas/hooks/useApplyNodeChanges')
 
     const initialNodes: Node<TerminalNodeData>[] = [
       {
@@ -134,7 +134,7 @@ describe('useWorkspaceCanvasApplyNodeChanges', () => {
     const onSpacesChange = vi.fn()
 
     const { useWorkspaceCanvasApplyNodeChanges } =
-      await import('../../../src/renderer/src/features/workspace/components/workspaceCanvas/hooks/useApplyNodeChanges')
+      await import('../../../src/contexts/workspace/presentation/renderer/components/workspaceCanvas/hooks/useApplyNodeChanges')
 
     const initialNodes: Node<TerminalNodeData>[] = [
       {

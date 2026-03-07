@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createCanvasInputModalityState,
   inferCanvasInputModalityFromWheel,
-} from '../../../src/renderer/src/features/workspace/utils/inputModality'
+} from '../../../src/contexts/workspace/presentation/renderer/utils/inputModality'
 
 describe('canvas input modality inference', () => {
   it('switches to trackpad mode on pinch-style wheel gestures', () => {

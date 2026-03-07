@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import type { GitWorktreeInfo } from '@shared/contracts/dto'
-import { toErrorMessage } from '@renderer/features/workspace/components/workspaceCanvas/helpers'
+import { toErrorMessage } from '@contexts/workspace/presentation/renderer/components/workspaceCanvas/helpers'
 import { getWorktreeApiMethod } from './spaceWorktree.shared'
 
 export function useSpaceWorktreeRefresh({

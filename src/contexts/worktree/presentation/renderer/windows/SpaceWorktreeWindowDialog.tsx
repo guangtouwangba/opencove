@@ -1,6 +1,6 @@
 import React from 'react'
 import type { GitWorktreeInfo } from '@shared/contracts/dto'
-import type { WorkspaceSpaceState } from '@renderer/features/workspace/types'
+import type { WorkspaceSpaceState } from '@contexts/workspace/presentation/renderer/types'
 import { SpaceWorktreePanels } from './SpaceWorktreePanels'
 import type { BranchMode, SpaceWorktreeViewMode } from './spaceWorktree.shared'
 

@@ -2,7 +2,7 @@ import type {
   AgentRuntimeStatus,
   TaskPriority,
   TaskRuntimeStatus,
-} from '@renderer/features/workspace/types'
+} from '@contexts/workspace/presentation/renderer/types'
 
 export function shouldStopWheelPropagation(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {

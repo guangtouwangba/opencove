@@ -1,7 +1,7 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { TerminalNodeHeader } from '../../../src/renderer/src/features/workspace/components/terminalNode/TerminalNodeHeader'
+import { TerminalNodeHeader } from '../../../src/contexts/workspace/presentation/renderer/components/terminalNode/TerminalNodeHeader'
 
 describe('TerminalNodeHeader directory mismatch badge', () => {
   it('renders DIR MISMATCH badge for agent nodes', () => {

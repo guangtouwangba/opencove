@@ -3,8 +3,8 @@ import {
   findNearestFreePosition,
   clampSizeToNonOverlapping,
   isPositionAvailable,
-} from '../../../src/renderer/src/features/workspace/utils/collision'
-import type { TerminalNodeData } from '../../../src/renderer/src/features/workspace/types'
+} from '../../../src/contexts/workspace/presentation/renderer/utils/collision'
+import type { TerminalNodeData } from '../../../src/contexts/workspace/presentation/renderer/types'
 
 const baseNode = {
   type: 'terminalNode',

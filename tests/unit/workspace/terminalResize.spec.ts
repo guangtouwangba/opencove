@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveStablePtySize } from '../../../src/renderer/src/features/workspace/utils/terminalResize'
+import { resolveStablePtySize } from '../../../src/contexts/workspace/presentation/renderer/utils/terminalResize'
 
 describe('resolveStablePtySize', () => {
   it('returns measured size on first sync', () => {

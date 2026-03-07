@@ -4,7 +4,7 @@ import {
   getCachedTerminalScreenState,
   invalidateCachedTerminalScreenState,
   setCachedTerminalScreenState,
-} from '../../../src/renderer/src/features/workspace/components/terminalNode/screenStateCache'
+} from '../../../src/contexts/workspace/presentation/renderer/components/terminalNode/screenStateCache'
 
 describe('terminal screen state cache', () => {
   it('returns cached screen only for the same node and session', () => {

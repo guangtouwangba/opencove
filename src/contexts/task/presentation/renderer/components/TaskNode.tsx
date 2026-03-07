@@ -8,7 +8,7 @@ import type {
   TaskAgentSessionRecord,
   TaskPriority,
   TaskRuntimeStatus,
-} from '@renderer/features/workspace/types'
+} from '@contexts/workspace/presentation/renderer/types'
 import type { AgentProvider } from '@contexts/settings/domain/agentSettings'
 import { TaskNodeAgentSessions } from './taskNode/TaskNodeAgentSessions'
 import { TaskNodeFooter } from './taskNode/TaskNodeFooter'

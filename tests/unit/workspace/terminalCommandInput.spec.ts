@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createTerminalCommandInputState,
   parseTerminalCommandInput,
-} from '../../../src/renderer/src/features/workspace/components/terminalNode/commandInput'
+} from '../../../src/contexts/workspace/presentation/renderer/components/terminalNode/commandInput'
 
 describe('parseTerminalCommandInput', () => {
   it('emits a command when enter is pressed', () => {

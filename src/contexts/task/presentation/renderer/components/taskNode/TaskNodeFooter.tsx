@@ -1,5 +1,5 @@
 import React, { type JSX } from 'react'
-import type { TaskRuntimeStatus } from '@renderer/features/workspace/types'
+import type { TaskRuntimeStatus } from '@contexts/workspace/presentation/renderer/types'
 import { TASK_STATUS_OPTIONS } from './helpers'
 
 export function TaskNodeFooter({

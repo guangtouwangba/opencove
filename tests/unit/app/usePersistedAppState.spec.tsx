@@ -8,10 +8,10 @@ const { flushScheduledPersistedStateWrite, schedulePersistedStateWrite } = vi.ho
   schedulePersistedStateWrite: vi.fn(),
 }))
 
-vi.mock('../../../src/renderer/src/features/workspace/utils/persistence', async () => {
+vi.mock('../../../src/contexts/workspace/presentation/renderer/utils/persistence', async () => {
   const actual = await vi.importActual<
-    typeof import('../../../src/renderer/src/features/workspace/utils/persistence')
-  >('../../../src/renderer/src/features/workspace/utils/persistence')
+    typeof import('../../../src/contexts/workspace/presentation/renderer/utils/persistence')
+  >('../../../src/contexts/workspace/presentation/renderer/utils/persistence')
 
   return {
     ...actual,
@@ -25,11 +25,11 @@ const { flushScheduledNodeScrollbackWrites } = vi.hoisted(() => ({
 }))
 
 vi.mock(
-  '../../../src/renderer/src/features/workspace/utils/persistence/scrollbackSchedule',
+  '../../../src/contexts/workspace/presentation/renderer/utils/persistence/scrollbackSchedule',
   async () => {
     const actual = await vi.importActual<
-      typeof import('../../../src/renderer/src/features/workspace/utils/persistence/scrollbackSchedule')
-    >('../../../src/renderer/src/features/workspace/utils/persistence/scrollbackSchedule')
+      typeof import('../../../src/contexts/workspace/presentation/renderer/utils/persistence/scrollbackSchedule')
+    >('../../../src/contexts/workspace/presentation/renderer/utils/persistence/scrollbackSchedule')
 
     return {
       ...actual,

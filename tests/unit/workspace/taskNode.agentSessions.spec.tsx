@@ -1,8 +1,8 @@
 import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { TaskNode } from '../../../src/renderer/src/features/workspace/components/TaskNode'
-import type { TaskAgentSessionRecord } from '../../../src/renderer/src/features/workspace/types'
+import { TaskNode } from '../../../src/contexts/workspace/presentation/renderer/components/TaskNode'
+import type { TaskAgentSessionRecord } from '../../../src/contexts/workspace/presentation/renderer/types'
 
 vi.mock('@xyflow/react', () => {
   return {

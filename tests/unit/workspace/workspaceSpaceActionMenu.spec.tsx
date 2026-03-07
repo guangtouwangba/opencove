@@ -1,7 +1,7 @@
 import React from 'react'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { WorkspaceSpaceActionMenu } from '../../../src/renderer/src/features/workspace/components/workspaceCanvas/view/WorkspaceSpaceActionMenu'
+import { WorkspaceSpaceActionMenu } from '../../../src/contexts/workspace/presentation/renderer/components/workspaceCanvas/view/WorkspaceSpaceActionMenu'
 import type { WorkspacePathOpener } from '../../../src/shared/types/api'
 
 function renderMenu(openers: WorkspacePathOpener[]) {

@@ -3,12 +3,12 @@ import { render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Node } from '@xyflow/react'
 import { DEFAULT_AGENT_SETTINGS } from '../../../src/renderer/src/features/settings/agentConfig'
-import { WorkspaceCanvas } from '../../../src/renderer/src/features/workspace/components/WorkspaceCanvas'
+import { WorkspaceCanvas } from '../../../src/contexts/workspace/presentation/renderer/components/WorkspaceCanvas'
 import type {
   TerminalNodeData,
   WorkspaceSpaceState,
   WorkspaceViewport,
-} from '../../../src/renderer/src/features/workspace/types'
+} from '../../../src/contexts/workspace/presentation/renderer/types'
 
 let latestReactFlowProps: Record<string, unknown> = {}
 
@@ -50,13 +50,13 @@ vi.mock('@xyflow/react', () => {
   }
 })
 
-vi.mock('../../../src/renderer/src/features/workspace/components/TerminalNode', () => {
+vi.mock('../../../src/contexts/workspace/presentation/renderer/components/TerminalNode', () => {
   return {
     TerminalNode: () => null,
   }
 })
 
-vi.mock('../../../src/renderer/src/features/workspace/components/TaskNode', () => {
+vi.mock('../../../src/contexts/workspace/presentation/renderer/components/TaskNode', () => {
   return {
     TaskNode: () => null,
   }

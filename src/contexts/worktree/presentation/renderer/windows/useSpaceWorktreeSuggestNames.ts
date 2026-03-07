@@ -1,9 +1,9 @@
 import { useCallback } from 'react'
 import type { AgentSettings } from '@contexts/settings/domain/agentSettings'
 import { resolveAgentModel } from '@contexts/settings/domain/agentSettings'
-import { toErrorMessage } from '@renderer/features/workspace/components/workspaceCanvas/helpers'
+import { toErrorMessage } from '@contexts/workspace/presentation/renderer/components/workspaceCanvas/helpers'
 import { getWorktreeApiMethod } from './spaceWorktree.shared'
-import type { WorkspaceSpaceState } from '@renderer/features/workspace/types'
+import type { WorkspaceSpaceState } from '@contexts/workspace/presentation/renderer/types'
 
 export function useSpaceWorktreeSuggestNames({
   space,

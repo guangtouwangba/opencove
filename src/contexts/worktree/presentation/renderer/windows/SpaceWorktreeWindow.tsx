@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Node } from '@xyflow/react'
 import type { AgentSettings } from '@contexts/settings/domain/agentSettings'
-import type { TerminalNodeData, WorkspaceSpaceState } from '@renderer/features/workspace/types'
+import type {
+  TerminalNodeData,
+  WorkspaceSpaceState,
+} from '@contexts/workspace/presentation/renderer/types'
 import type { CreateGitWorktreeBranchMode, GitWorktreeInfo } from '@shared/contracts/dto'
 import { SpaceWorktreeGuardWindow, type SpaceWorktreeGuardState } from './SpaceWorktreeGuardWindow'
 import { SpaceWorktreeWindowDialog } from './SpaceWorktreeWindowDialog'
@@ -20,7 +23,7 @@ import { useSpaceWorktreeGuardActions } from './useSpaceWorktreeGuardActions'
 import { useSpaceWorktreePanelHandlers } from './useSpaceWorktreePanelHandlers'
 import { useSpaceWorktreeRefresh } from './useSpaceWorktreeRefresh'
 import { useSpaceWorktreeSuggestNames } from './useSpaceWorktreeSuggestNames'
-import { toErrorMessage } from '@renderer/features/workspace/components/workspaceCanvas/helpers'
+import { toErrorMessage } from '@contexts/workspace/presentation/renderer/components/workspaceCanvas/helpers'
 
 export function SpaceWorktreeWindow({
   spaceId,

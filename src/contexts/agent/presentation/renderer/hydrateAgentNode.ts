@@ -1,5 +1,8 @@
 import type { Node } from '@xyflow/react'
-import type { AgentNodeData, TerminalNodeData } from '@renderer/features/workspace/types'
+import type {
+  AgentNodeData,
+  TerminalNodeData,
+} from '@contexts/workspace/presentation/renderer/types'
 import { toAgentNodeTitle, toErrorMessage } from '@renderer/app/utils/format'
 import {
   clearResumeSessionBinding,

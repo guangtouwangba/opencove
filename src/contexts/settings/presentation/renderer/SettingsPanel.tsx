@@ -12,7 +12,7 @@ import { ModelOverrideSection } from './settingsPanel/ModelOverrideSection'
 import { TaskTagsSection } from './settingsPanel/TaskTagsSection'
 import { TaskTitleSection } from './settingsPanel/TaskTitleSection'
 import { WorkspaceSection } from './settingsPanel/WorkspaceSection'
-import type { WorkspaceState } from '@renderer/features/workspace/types'
+import type { WorkspaceState } from '@contexts/workspace/presentation/renderer/types'
 
 interface ProviderModelCatalogEntry {
   models: string[]

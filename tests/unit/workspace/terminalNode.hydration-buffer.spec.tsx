@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   clearCachedTerminalScreenStates,
   setCachedTerminalScreenState,
-} from '../../../src/renderer/src/features/workspace/components/terminalNode/screenStateCache'
+} from '../../../src/contexts/workspace/presentation/renderer/components/terminalNode/screenStateCache'
 
 type DataEvent = { sessionId: string; data: string }
 type ExitEvent = { sessionId: string; exitCode: number }
@@ -163,7 +163,7 @@ describe('TerminalNode hydration buffering', () => {
     })
 
     const { TerminalNode } =
-      await import('../../../src/renderer/src/features/workspace/components/TerminalNode')
+      await import('../../../src/contexts/workspace/presentation/renderer/components/TerminalNode')
 
     const { container } = render(
       <TerminalNode
@@ -260,7 +260,7 @@ describe('TerminalNode hydration buffering', () => {
     })
 
     const { TerminalNode } =
-      await import('../../../src/renderer/src/features/workspace/components/TerminalNode')
+      await import('../../../src/contexts/workspace/presentation/renderer/components/TerminalNode')
 
     render(
       <TerminalNode

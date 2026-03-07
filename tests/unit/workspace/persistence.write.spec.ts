@@ -3,7 +3,7 @@ import {
   readPersistedState,
   toPersistedState,
   writePersistedState,
-} from '../../../src/renderer/src/features/workspace/utils/persistence'
+} from '../../../src/contexts/workspace/presentation/renderer/utils/persistence'
 import { installMockStorage, MockStorage } from './persistenceTestStorage'
 
 installMockStorage()

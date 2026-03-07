@@ -2,11 +2,11 @@ import React, { useRef, useState } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Node } from '@xyflow/react'
-import { useWorkspaceCanvasSpaceDirectoryOps } from '../../../src/renderer/src/features/workspace/components/workspaceCanvas/hooks/useSpaceDirectoryOps'
+import { useWorkspaceCanvasSpaceDirectoryOps } from '../../../src/contexts/workspace/presentation/renderer/components/workspaceCanvas/hooks/useSpaceDirectoryOps'
 import type {
   TerminalNodeData,
   WorkspaceSpaceState,
-} from '../../../src/renderer/src/features/workspace/types'
+} from '../../../src/contexts/workspace/presentation/renderer/types'
 
 function createNoteNode(id: string, title: string): Node<TerminalNodeData> {
   return {

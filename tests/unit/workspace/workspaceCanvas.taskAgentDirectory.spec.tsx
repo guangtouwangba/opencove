@@ -7,8 +7,8 @@ import type {
   TerminalNodeData,
   WorkspaceSpaceState,
   WorkspaceViewport,
-} from '../../../src/renderer/src/features/workspace/types'
-import { WorkspaceCanvas } from '../../../src/renderer/src/features/workspace/components/WorkspaceCanvas'
+} from '../../../src/contexts/workspace/presentation/renderer/types'
+import { WorkspaceCanvas } from '../../../src/contexts/workspace/presentation/renderer/components/WorkspaceCanvas'
 
 vi.mock('@xyflow/react', () => {
   return {
@@ -68,13 +68,13 @@ vi.mock('@xyflow/react', () => {
   }
 })
 
-vi.mock('../../../src/renderer/src/features/workspace/components/TerminalNode', () => {
+vi.mock('../../../src/contexts/workspace/presentation/renderer/components/TerminalNode', () => {
   return {
     TerminalNode: () => null,
   }
 })
 
-vi.mock('../../../src/renderer/src/features/workspace/components/TaskNode', () => {
+vi.mock('../../../src/contexts/workspace/presentation/renderer/components/TaskNode', () => {
   return {
     TaskNode: ({ onRunAgent }: { onRunAgent?: () => void }) => {
       return (

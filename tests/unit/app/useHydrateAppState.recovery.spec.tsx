@@ -2,17 +2,17 @@ import React, { useState } from 'react'
 import { render, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { DEFAULT_AGENT_SETTINGS } from '../../../src/renderer/src/features/settings/agentConfig'
-import type { WorkspaceState } from '../../../src/renderer/src/features/workspace/types'
+import type { WorkspaceState } from '../../../src/contexts/workspace/presentation/renderer/types'
 import { useAppStore } from '../../../src/renderer/src/app/store/useAppStore'
 
 const { readPersistedStateWithMeta } = vi.hoisted(() => ({
   readPersistedStateWithMeta: vi.fn(),
 }))
 
-vi.mock('../../../src/renderer/src/features/workspace/utils/persistence', async () => {
+vi.mock('../../../src/contexts/workspace/presentation/renderer/utils/persistence', async () => {
   const actual = await vi.importActual<
-    typeof import('../../../src/renderer/src/features/workspace/utils/persistence')
-  >('../../../src/renderer/src/features/workspace/utils/persistence')
+    typeof import('../../../src/contexts/workspace/presentation/renderer/utils/persistence')
+  >('../../../src/contexts/workspace/presentation/renderer/utils/persistence')
 
   return {
     ...actual,

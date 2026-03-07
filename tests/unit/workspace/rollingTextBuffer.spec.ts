@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRollingTextBuffer } from '../../../src/renderer/src/features/workspace/utils/rollingTextBuffer'
+import { createRollingTextBuffer } from '../../../src/contexts/workspace/presentation/renderer/utils/rollingTextBuffer'
 
 describe('createRollingTextBuffer', () => {
   it('keeps only the most recent characters', () => {

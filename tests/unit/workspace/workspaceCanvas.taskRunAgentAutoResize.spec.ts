@@ -4,8 +4,8 @@ import { DEFAULT_AGENT_SETTINGS } from '../../../src/renderer/src/features/setti
 import type {
   TerminalNodeData,
   WorkspaceSpaceState,
-} from '../../../src/renderer/src/features/workspace/types'
-import { runTaskAgentAction } from '../../../src/renderer/src/features/workspace/components/workspaceCanvas/hooks/useTaskActions.agentSession'
+} from '../../../src/contexts/workspace/presentation/renderer/types'
+import { runTaskAgentAction } from '../../../src/contexts/workspace/presentation/renderer/components/workspaceCanvas/hooks/useTaskActions.agentSession'
 
 describe('WorkspaceCanvas task run agent auto resize', () => {
   it('expands the task space to fit the created agent node', async () => {

@@ -6,7 +6,7 @@ import {
   resolveDefaultTaskWindowSize,
   DEFAULT_TERMINAL_WINDOW_BASE_SIZE,
   DEFAULT_TERMINAL_WINDOW_MAX_SIZE,
-} from '../../../src/renderer/src/features/workspace/components/workspaceCanvas/constants'
+} from '../../../src/contexts/workspace/presentation/renderer/components/workspaceCanvas/constants'
 
 describe('workspace canvas default terminal sizing', () => {
   it('applies scale percent to default terminal/agent window size', () => {

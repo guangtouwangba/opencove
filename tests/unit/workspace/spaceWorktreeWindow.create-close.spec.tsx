@@ -3,11 +3,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { Node } from '@xyflow/react'
 import { describe, expect, it, vi } from 'vitest'
 import { DEFAULT_AGENT_SETTINGS } from '../../../src/renderer/src/features/settings/agentConfig'
-import { SpaceWorktreeWindow } from '../../../src/renderer/src/features/workspace/components/workspaceCanvas/windows/SpaceWorktreeWindow'
+import { SpaceWorktreeWindow } from '../../../src/contexts/workspace/presentation/renderer/components/workspaceCanvas/windows/SpaceWorktreeWindow'
 import type {
   TerminalNodeData,
   WorkspaceSpaceState,
-} from '../../../src/renderer/src/features/workspace/types'
+} from '../../../src/contexts/workspace/presentation/renderer/types'
 
 function createNodes(): Node<TerminalNodeData>[] {
   return []

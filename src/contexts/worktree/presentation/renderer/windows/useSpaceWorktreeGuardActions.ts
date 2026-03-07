@@ -5,7 +5,7 @@ import type {
   PendingOperation,
   UpdateSpaceDirectoryOptions,
 } from './spaceWorktree.shared'
-import { toErrorMessage } from '@renderer/features/workspace/components/workspaceCanvas/helpers'
+import { toErrorMessage } from '@contexts/workspace/presentation/renderer/components/workspaceCanvas/helpers'
 
 export function useSpaceWorktreeGuardActions({
   guard,

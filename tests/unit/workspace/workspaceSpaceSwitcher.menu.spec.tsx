@@ -1,7 +1,7 @@
 import React from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { WorkspaceSpaceRegionsOverlay } from '../../../src/renderer/src/features/workspace/components/workspaceCanvas/view/WorkspaceSpaceRegionsOverlay'
+import { WorkspaceSpaceRegionsOverlay } from '../../../src/contexts/workspace/presentation/renderer/components/workspaceCanvas/view/WorkspaceSpaceRegionsOverlay'
 
 vi.mock('@xyflow/react', () => {
   return {
