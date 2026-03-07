@@ -100,6 +100,8 @@
 
 -   **Agent 行为准则与详细工作流**：`AGENTS.md` (The Single Source of Truth for Agents)
 -   **架构标准（DDD + Clean）**：`docs/ARCHITECTURE.md`
+-   **完全重构计划**：`docs/REFACTOR_PLAN.md`
+-   **恢复模型与 owner 表**：`docs/RECOVERY_MODEL.md`
 -   **持久化（SQLite schema / migrations）**：`docs/PERSISTENCE.md`
 -   **UI 开发标准**：
     -   窗口 UI 标准：`docs/WINDOW_UI_STANDARD.md`
