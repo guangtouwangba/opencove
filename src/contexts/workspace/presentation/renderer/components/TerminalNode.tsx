@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import type { JSX } from 'react'
+import React, { useCallback, useEffect, useRef, useState, type JSX } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import { SerializeAddon } from '@xterm/addon-serialize'
 import { Terminal } from '@xterm/xterm'
@@ -435,7 +434,7 @@ export function TerminalNode({
     <div
       className="terminal-node nowheel"
       style={sizeStyle}
-      onMouseDownCapture={event => {
+      onClickCapture={event => {
         if (event.button !== 0) {
           return
         }
@@ -445,14 +444,16 @@ export function TerminalNode({
         }
 
         const shouldNormalizeViewport = Boolean(event.target.closest('.terminal-node__terminal'))
-        const shouldSelectNode =
-          shouldNormalizeViewport || Boolean(event.target.closest('.terminal-node__header'))
+        const shouldIgnoreSelection = Boolean(event.target.closest('.terminal-node__resizer'))
 
-        if (!shouldSelectNode) {
+        if (shouldIgnoreSelection) {
           return
         }
 
-        onInteractionStart?.({ normalizeViewport: shouldNormalizeViewport })
+        onInteractionStart?.({
+          normalizeViewport: shouldNormalizeViewport,
+          shiftKey: event.shiftKey,
+        })
       }}
       onWheel={event => {
         if (shouldStopWheelPropagation(event.currentTarget)) {

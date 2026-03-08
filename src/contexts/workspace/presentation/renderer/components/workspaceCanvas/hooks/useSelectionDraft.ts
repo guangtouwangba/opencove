@@ -115,7 +115,7 @@ export function useWorkspaceCanvasSelectionDraft({
         selectionDraftRef.current = null
 
         const shouldClearSelection =
-          !draft.additive &&
+          !draft.toggleSelection &&
           draft.startSpaceId === null &&
           (draft.selectedNodeIdsAtStart.length > 0 || draft.selectedSpaceIdsAtStart.length > 0)
 
@@ -359,7 +359,7 @@ export function useWorkspaceCanvasSelectionDraft({
         currentX: event.clientX,
         currentY: event.clientY,
         pointerId: event.pointerId,
-        additive: event.shiftKey || isShiftPressedRef.current,
+        toggleSelection: event.shiftKey || isShiftPressedRef.current,
         selectedNodeIdsAtStart: selectedNodes.map(node => node.id),
         selectedSpaceIdsAtStart: [...selectedSpaceIdsRef.current],
         startSpaceId: startSpace?.id ?? null,

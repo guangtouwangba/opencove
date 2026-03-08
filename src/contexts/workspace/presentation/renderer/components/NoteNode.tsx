@@ -10,7 +10,7 @@ interface NoteNodeProps {
   onClose: () => void
   onResize: (size: Size) => void
   onTextChange: (text: string) => void
-  onInteractionStart?: () => void
+  onInteractionStart?: (options?: { shiftKey?: boolean }) => void
 }
 
 type ResizeAxis = 'horizontal' | 'vertical'
@@ -118,12 +118,16 @@ export function NoteNode({
     <div
       className="note-node nowheel"
       style={style}
-      onMouseDownCapture={event => {
+      onClickCapture={event => {
         if (event.button !== 0) {
           return
         }
 
-        onInteractionStart?.()
+        if (!(event.target instanceof Element) || event.target.closest('.nodrag')) {
+          return
+        }
+
+        onInteractionStart?.({ shiftKey: event.shiftKey })
       }}
       onWheel={event => {
         if (shouldStopWheelPropagation(event.currentTarget)) {

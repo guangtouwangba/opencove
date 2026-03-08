@@ -340,7 +340,6 @@ function WorkspaceCanvasInner({
     normalizePosition,
     applyPendingScrollbacks,
     isNodeDraggingRef,
-    selectionDraftRef,
     spacesRef,
     selectedSpaceIdsRef,
     dragSelectedSpaceIdsRef,

@@ -32,13 +32,14 @@ export function useWorkspaceCanvasComposedNodeTypes({
   agentSettings: AgentSettings
   actionRefs: WorkspaceCanvasActionRefs
 }) {
-  const selectNode = useWorkspaceCanvasSelectNode({
-    setNodes,
-    setSelectedNodeIds,
-    setSelectedSpaceIds,
-    selectedNodeIdsRef,
-    selectedSpaceIdsRef,
-  })
+  const selectNode: (nodeId: string, options?: { toggle?: boolean }) => void =
+    useWorkspaceCanvasSelectNode({
+      setNodes,
+      setSelectedNodeIds,
+      setSelectedSpaceIds,
+      selectedNodeIdsRef,
+      selectedSpaceIdsRef,
+    })
 
   return useWorkspaceCanvasNodeTypes({
     nodesRef,

@@ -7,7 +7,6 @@ import {
 } from '@xyflow/react'
 import type { TerminalNodeData, WorkspaceSpaceState } from '../../../types'
 import { invalidateCachedTerminalScreenState } from '../../terminalNode/screenStateCache'
-import type { SelectionDraftState } from '../types'
 
 interface UseApplyNodeChangesParams {
   nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
@@ -20,7 +19,6 @@ interface UseApplyNodeChangesParams {
   ) => { x: number; y: number }
   applyPendingScrollbacks: (targetNodes: Node<TerminalNodeData>[]) => Node<TerminalNodeData>[]
   isNodeDraggingRef: MutableRefObject<boolean>
-  selectionDraftRef: MutableRefObject<SelectionDraftState | null>
   spacesRef: MutableRefObject<WorkspaceSpaceState[]>
   selectedSpaceIdsRef: MutableRefObject<string[]>
   dragSelectedSpaceIdsRef?: MutableRefObject<string[] | null>
@@ -35,7 +33,6 @@ export function useWorkspaceCanvasApplyNodeChanges({
   normalizePosition,
   applyPendingScrollbacks,
   isNodeDraggingRef,
-  selectionDraftRef,
   spacesRef,
   selectedSpaceIdsRef,
   dragSelectedSpaceIdsRef,
@@ -44,10 +41,7 @@ export function useWorkspaceCanvasApplyNodeChanges({
 }: UseApplyNodeChangesParams): (changes: NodeChange<Node<TerminalNodeData>>[]) => void {
   return useCallback(
     (changes: NodeChange<Node<TerminalNodeData>>[]) => {
-      const filteredChanges =
-        selectionDraftRef.current !== null
-          ? changes.filter(change => change.type !== 'select')
-          : changes
+      const filteredChanges = changes.filter(change => change.type !== 'select')
 
       if (!filteredChanges.length) {
         return
@@ -292,7 +286,6 @@ export function useWorkspaceCanvasApplyNodeChanges({
       onSpacesChange,
       dragSelectedSpaceIdsRef,
       selectedSpaceIdsRef,
-      selectionDraftRef,
       spacesRef,
     ],
   )

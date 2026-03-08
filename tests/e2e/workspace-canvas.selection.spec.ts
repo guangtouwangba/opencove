@@ -55,7 +55,7 @@ test.describe('Workspace Canvas - Selection', () => {
     }
   })
 
-  test('supports trackpad selection replace/add semantics', async () => {
+  test('supports trackpad selection replace/toggle semantics', async () => {
     const { electronApp, window } = await launchApp()
 
     try {
@@ -149,6 +149,18 @@ test.describe('Workspace Canvas - Selection', () => {
         paneBox.y + paneBox.height - 120,
         firstNodeBoxForReplace.y + firstNodeBoxForReplace.height - 24,
       )
+
+      await window.keyboard.down('Shift')
+      await window.mouse.move(replaceStartX, replaceStartY)
+      await window.mouse.down()
+      await window.mouse.move(replaceEndX, replaceEndY, { steps: 10 })
+      await window.mouse.up()
+      await window.keyboard.up('Shift')
+
+      await expect(window.locator('.react-flow__node.selected')).toHaveCount(1)
+      await expect(
+        window.locator('.react-flow__node.selected .terminal-node__title').first(),
+      ).toContainText('terminal-trackpad-select-b')
 
       await window.mouse.move(replaceStartX, replaceStartY)
       await window.mouse.down()
@@ -260,7 +272,69 @@ test.describe('Workspace Canvas - Selection', () => {
     }
   })
 
-  test('switches selected window on body click without moving canvas', async () => {
+  test('toggles node selection with shift-click on terminal headers in mouse mode', async () => {
+    const { electronApp, window } = await launchApp()
+
+    try {
+      await clearAndSeedWorkspace(
+        window,
+        [
+          {
+            id: 'mouse-shift-click-node-a',
+            title: 'terminal-mouse-shift-click-a',
+            position: { x: 220, y: 180 },
+            width: 460,
+            height: 300,
+          },
+          {
+            id: 'mouse-shift-click-node-b',
+            title: 'terminal-mouse-shift-click-b',
+            position: { x: 760, y: 180 },
+            width: 460,
+            height: 300,
+          },
+        ],
+        {
+          settings: {
+            canvasInputMode: 'mouse',
+          },
+        },
+      )
+
+      const firstNode = window
+        .locator('.react-flow__node')
+        .filter({ hasText: 'terminal-mouse-shift-click-a' })
+        .first()
+      const secondNode = window
+        .locator('.react-flow__node')
+        .filter({ hasText: 'terminal-mouse-shift-click-b' })
+        .first()
+
+      const firstHeader = firstNode.locator('.terminal-node__header')
+      const secondHeader = secondNode.locator('.terminal-node__header')
+      await expect(firstHeader).toBeVisible()
+      await expect(secondHeader).toBeVisible()
+
+      await firstHeader.click({ position: { x: 40, y: 20 } })
+      await expect(window.locator('.react-flow__node.selected')).toHaveCount(1)
+
+      await window.keyboard.down('Shift')
+      await secondHeader.click({ position: { x: 40, y: 20 } })
+      await expect(window.locator('.react-flow__node.selected')).toHaveCount(2)
+
+      await firstHeader.click({ position: { x: 40, y: 20 } })
+      await window.keyboard.up('Shift')
+
+      await expect(window.locator('.react-flow__node.selected')).toHaveCount(1)
+      await expect(
+        window.locator('.react-flow__node.selected .terminal-node__title').first(),
+      ).toContainText('terminal-mouse-shift-click-b')
+    } finally {
+      await electronApp.close()
+    }
+  })
+
+  test('switches selected window on terminal header click without moving canvas', async () => {
     const { electronApp, window } = await launchApp()
 
     try {
@@ -277,7 +351,7 @@ test.describe('Workspace Canvas - Selection', () => {
           {
             id: 'mouse-window-switch-node-b',
             title: 'terminal-mouse-window-switch-b',
-            position: { x: 560, y: 180 },
+            position: { x: 760, y: 180 },
             width: 460,
             height: 300,
           },
@@ -298,26 +372,18 @@ test.describe('Workspace Canvas - Selection', () => {
         .filter({ hasText: 'terminal-mouse-window-switch-b' })
         .first()
 
-      const firstNodeBox = await firstNode.boundingBox()
-      if (!firstNodeBox) {
-        throw new Error('first node bounding box unavailable')
-      }
+      const firstHeader = firstNode.locator('.terminal-node__header')
+      const secondHeader = secondNode.locator('.terminal-node__header')
+      await expect(firstHeader).toBeVisible()
+      await expect(secondHeader).toBeVisible()
 
-      const secondNodeBox = await secondNode.boundingBox()
-      if (!secondNodeBox) {
-        throw new Error('second node bounding box unavailable')
-      }
-
-      await window.mouse.click(firstNodeBox.x + 10, firstNodeBox.y + 10)
+      await firstHeader.click({ position: { x: 40, y: 20 } })
       await expect(window.locator('.react-flow__node.selected')).toHaveCount(1)
       await expect(
         window.locator('.react-flow__node.selected .terminal-node__title').first(),
       ).toContainText('terminal-mouse-window-switch-a')
 
-      await window.mouse.click(
-        secondNodeBox.x + secondNodeBox.width / 2,
-        secondNodeBox.y + secondNodeBox.height / 2,
-      )
+      await secondHeader.click({ position: { x: 40, y: 20 } })
       await expect(window.locator('.react-flow__node.selected')).toHaveCount(1)
       await expect(
         window.locator('.react-flow__node.selected .terminal-node__title').first(),

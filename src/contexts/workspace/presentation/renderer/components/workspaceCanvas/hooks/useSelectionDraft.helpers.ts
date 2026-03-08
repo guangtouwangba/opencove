@@ -52,6 +52,21 @@ export function setSortedSelectedSpaceIds(
   })
 }
 
+function toggleSelectionIds(selectedAtStart: string[], intersectingIds: string[]): string[] {
+  const nextSelected = new Set(selectedAtStart)
+
+  intersectingIds.forEach(id => {
+    if (nextSelected.has(id)) {
+      nextSelected.delete(id)
+      return
+    }
+
+    nextSelected.add(id)
+  })
+
+  return [...nextSelected]
+}
+
 export function applySelectionDraft({
   draft,
   reactFlow,
@@ -109,13 +124,15 @@ export function applySelectionDraft({
 
   const nextSelectedSpaceIds = selectionIsInSpace
     ? []
-    : draft.additive
-      ? [...draft.selectedSpaceIdsAtStart, ...intersectingSpaceIds]
+    : draft.toggleSelection
+      ? toggleSelectionIds(draft.selectedSpaceIdsAtStart, intersectingSpaceIds)
       : intersectingSpaceIds
 
   setSortedSelectedSpaceIds(nextSelectedSpaceIds, selectedSpaceIdsRef, setSelectedSpaceIds)
 
-  const selectedAtStart = draft.additive ? new Set(draft.selectedNodeIdsAtStart) : new Set<string>()
+  const selectedAtStart = draft.toggleSelection
+    ? new Set(draft.selectedNodeIdsAtStart)
+    : new Set<string>()
   const selectedIds: string[] = []
 
   setNodes(
@@ -141,10 +158,14 @@ export function applySelectionDraft({
           ? Boolean(startSpaceRect && isPointInsideRect(nodeCenter, startSpaceRect))
           : !intersectingSpaceRects.some(rect => isPointInsideRect(nodeCenter, rect))
 
-        let isSelected = intersects && allowedBySpace
+        const intersectsSelectableArea = intersects && allowedBySpace
+        let isSelected = intersectsSelectableArea
 
-        if (draft.additive) {
-          isSelected = isSelected || (allowedBySpace && selectedAtStart.has(node.id))
+        if (draft.toggleSelection) {
+          isSelected = selectedAtStart.has(node.id)
+          if (intersectsSelectableArea) {
+            isSelected = !isSelected
+          }
         }
 
         if (isSelected) {
@@ -152,7 +173,7 @@ export function applySelectionDraft({
         }
 
         const shouldForceDeselectSync =
-          forceDeselectIntersectingNodes && intersects && !allowedBySpace
+          !draft.toggleSelection && forceDeselectIntersectingNodes && intersects && !allowedBySpace
 
         if (node.selected === isSelected && !shouldForceDeselectSync) {
           return node

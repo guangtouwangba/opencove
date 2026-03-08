@@ -48,7 +48,7 @@ interface TaskNodeProps {
   onStatusChange: (status: TaskRuntimeStatus) => void
   onResumeAgentSession: (recordId: string) => void
   onRemoveAgentSessionRecord: (recordId: string) => void
-  onInteractionStart?: () => void
+  onInteractionStart?: (options?: { shiftKey?: boolean }) => void
 }
 
 type ResizeAxis = 'horizontal' | 'vertical'
@@ -227,12 +227,16 @@ export function TaskNode({
     <div
       className={`task-node nowheel${isEnriching ? ' task-node--enriching' : ''}`}
       style={style}
-      onMouseDownCapture={event => {
+      onClickCapture={event => {
         if (event.button !== 0) {
           return
         }
 
-        onInteractionStart?.()
+        if (!(event.target instanceof Element) || event.target.closest('.nodrag')) {
+          return
+        }
+
+        onInteractionStart?.({ shiftKey: event.shiftKey })
       }}
       onWheel={event => {
         if (shouldStopWheelPropagation(event.currentTarget)) {

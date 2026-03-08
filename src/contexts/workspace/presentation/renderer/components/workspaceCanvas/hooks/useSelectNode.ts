@@ -19,26 +19,54 @@ export function useWorkspaceCanvasSelectNode({
   setSelectedSpaceIds: React.Dispatch<React.SetStateAction<string[]>>
   selectedNodeIdsRef: React.MutableRefObject<string[]>
   selectedSpaceIdsRef: React.MutableRefObject<string[]>
-}): (nodeId: string) => void {
+}): (nodeId: string, options?: { toggle?: boolean }) => void {
   const reactFlowStore = useStoreApi()
 
   return useCallback(
-    (nodeId: string) => {
-      reactFlowStore.setState({ nodesSelectionActive: false })
+    (nodeId: string, options?: { toggle?: boolean }) => {
+      const shouldToggle = options?.toggle === true
+      let nextSelectedNodeIds = selectedNodeIdsRef.current
 
-      const shouldPreserveSelectedSpaces =
-        selectedSpaceIdsRef.current.length > 0 && selectedNodeIdsRef.current.includes(nodeId)
-
-      let didUpdateSelection = false
       setNodes(
         prevNodes => {
+          let hasChanged = false
+
+          if (shouldToggle) {
+            const toggledSelectedIds: string[] = []
+
+            const nextNodes = prevNodes.map(node => {
+              let nextSelected = node.selected
+
+              if (node.id === nodeId) {
+                nextSelected = !node.selected
+              }
+
+              if (nextSelected) {
+                toggledSelectedIds.push(node.id)
+              }
+
+              if (node.selected === nextSelected) {
+                return node
+              }
+
+              hasChanged = true
+              return {
+                ...node,
+                selected: nextSelected,
+              }
+            })
+
+            nextSelectedNodeIds = toggledSelectedIds
+            return hasChanged ? nextNodes : prevNodes
+          }
+
           const isAlreadySelected = prevNodes.some(node => node.id === nodeId && node.selected)
           if (isAlreadySelected) {
+            nextSelectedNodeIds = prevNodes.filter(node => node.selected).map(node => node.id)
             return prevNodes
           }
 
-          didUpdateSelection = true
-          let hasChanged = false
+          nextSelectedNodeIds = [nodeId]
           const nextNodes = prevNodes.map(node => {
             const shouldSelect = node.id === nodeId
             if (node.selected === shouldSelect) {
@@ -57,20 +85,23 @@ export function useWorkspaceCanvasSelectNode({
         { syncLayout: false },
       )
 
-      if (!didUpdateSelection) {
-        return
-      }
+      if (
+        !shouldToggle &&
+        nextSelectedNodeIds.includes(nodeId) &&
+        nextSelectedNodeIds.length === 1
+      ) {
+        const shouldPreserveSelectedSpaces =
+          selectedSpaceIdsRef.current.length > 0 && selectedNodeIdsRef.current.includes(nodeId)
 
-      if (!shouldPreserveSelectedSpaces) {
-        setSelectedSpaceIds([])
-      }
-      setSelectedNodeIds(previous => {
-        if (previous.includes(nodeId)) {
-          return previous
+        if (!shouldPreserveSelectedSpaces) {
+          selectedSpaceIdsRef.current = []
+          setSelectedSpaceIds([])
         }
+      }
 
-        return [nodeId]
-      })
+      selectedNodeIdsRef.current = nextSelectedNodeIds
+      setSelectedNodeIds(nextSelectedNodeIds)
+      reactFlowStore.setState({ nodesSelectionActive: nextSelectedNodeIds.length > 0 })
     },
     [
       reactFlowStore,
