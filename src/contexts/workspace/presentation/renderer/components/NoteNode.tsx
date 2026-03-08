@@ -127,6 +127,7 @@ export function NoteNode({
           return
         }
 
+        event.stopPropagation()
         onInteractionStart?.({ shiftKey: event.shiftKey })
       }}
       onWheel={event => {
@@ -158,6 +159,9 @@ export function NoteNode({
         data-testid="note-node-textarea"
         value={text}
         onPointerDown={event => {
+          event.stopPropagation()
+        }}
+        onClick={event => {
           event.stopPropagation()
         }}
         onChange={event => {

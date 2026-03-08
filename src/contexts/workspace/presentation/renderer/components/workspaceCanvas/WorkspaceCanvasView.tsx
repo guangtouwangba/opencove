@@ -297,6 +297,7 @@ export function WorkspaceCanvasView({
       ref={canvasRef}
       className="workspace-canvas"
       data-canvas-input-mode={resolvedCanvasInputMode}
+      data-selected-node-count={selectedNodeCount}
       onClick={onCanvasClick}
       onDoubleClickCapture={handleCanvasDoubleClickCapture}
       onPointerDownCapture={handleCanvasPointerDownCapture}

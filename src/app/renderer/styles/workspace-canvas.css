@@ -50,6 +50,10 @@
   cursor: default;
 }
 
+.workspace-canvas[data-selected-node-count='1'] .react-flow__nodesselection-rect {
+  pointer-events: none;
+}
+
 .workspace-canvas .react-flow__controls {
   left: 16px;
   bottom: 16px;

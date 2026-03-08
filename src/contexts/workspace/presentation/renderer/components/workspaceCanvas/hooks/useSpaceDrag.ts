@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Node } from '@xyflow/react'
-import type { ReactFlowInstance } from '@xyflow/react'
+import { useStoreApi, type Node, type ReactFlowInstance } from '@xyflow/react'
 import type { TerminalNodeData, WorkspaceSpaceRect, WorkspaceSpaceState } from '../../../types'
 import type { ContextMenuState, EmptySelectionPromptState, SpaceDragState } from '../types'
 import {
@@ -9,6 +8,8 @@ import {
   type SpaceFrameHandle,
 } from '../../../utils/spaceLayout'
 import { finalizeWorkspaceSpaceDrag } from './useSpaceDrag.finalize'
+import { createSpaceDragState } from './useSpaceDrag.startState'
+import { setSortedSelectedSpaceIds } from './useSelectionDraft.helpers'
 
 interface UseSpaceDragParams {
   workspaceId: string
@@ -16,11 +17,14 @@ interface UseSpaceDragParams {
   nodesRef: React.MutableRefObject<Node<TerminalNodeData>[]>
   spacesRef: React.MutableRefObject<WorkspaceSpaceState[]>
   selectedNodeIdsRef: React.MutableRefObject<string[]>
+  selectedSpaceIdsRef: React.MutableRefObject<string[]>
   setNodes: (
     updater: (prevNodes: Node<TerminalNodeData>[]) => Node<TerminalNodeData>[],
     options?: { syncLayout?: boolean },
   ) => void
   onSpacesChange: (spaces: WorkspaceSpaceState[]) => void
+  setSelectedNodeIds: React.Dispatch<React.SetStateAction<string[]>>
+  setSelectedSpaceIds: React.Dispatch<React.SetStateAction<string[]>>
   onRequestPersistFlush?: () => void
   setContextMenu: React.Dispatch<React.SetStateAction<ContextMenuState | null>>
   cancelSpaceRename: () => void
@@ -33,8 +37,11 @@ export function useWorkspaceCanvasSpaceDrag({
   nodesRef,
   spacesRef,
   selectedNodeIdsRef,
+  selectedSpaceIdsRef,
   setNodes,
   onSpacesChange,
+  setSelectedNodeIds,
+  setSelectedSpaceIds,
   onRequestPersistFlush,
   setContextMenu,
   cancelSpaceRename,
@@ -47,6 +54,7 @@ export function useWorkspaceCanvasSpaceDrag({
     options?: { mode?: 'auto' | 'region' },
   ) => void
 } {
+  const reactFlowStore = useStoreApi()
   const [spaceFramePreview, setSpaceFramePreview] = useState<{
     spaceId: string
     rect: WorkspaceSpaceRect
@@ -192,6 +200,85 @@ export function useWorkspaceCanvasSpaceDrag({
     ],
   )
 
+  const applySpaceClickSelection = useCallback(
+    (spaceId: string, options?: { toggle?: boolean }) => {
+      const shouldToggle = options?.toggle === true
+
+      if (shouldToggle) {
+        const nextSelectedSpaceIds = selectedSpaceIdsRef.current.includes(spaceId)
+          ? selectedSpaceIdsRef.current.filter(selectedSpaceId => selectedSpaceId !== spaceId)
+          : [...selectedSpaceIdsRef.current, spaceId]
+
+        setSortedSelectedSpaceIds(nextSelectedSpaceIds, selectedSpaceIdsRef, setSelectedSpaceIds)
+        reactFlowStore.setState({ nodesSelectionActive: selectedNodeIdsRef.current.length > 0 })
+        return
+      }
+
+      setNodes(
+        prevNodes => {
+          let hasChanged = false
+          const nextNodes = prevNodes.map(node => {
+            if (!node.selected) {
+              return node
+            }
+
+            hasChanged = true
+            return {
+              ...node,
+              selected: false,
+            }
+          })
+
+          return hasChanged ? nextNodes : prevNodes
+        },
+        { syncLayout: false },
+      )
+
+      selectedNodeIdsRef.current = []
+      setSelectedNodeIds([])
+      setSortedSelectedSpaceIds([spaceId], selectedSpaceIdsRef, setSelectedSpaceIds)
+      reactFlowStore.setState({ nodesSelectionActive: false })
+    },
+    [
+      reactFlowStore,
+      selectedNodeIdsRef,
+      selectedSpaceIdsRef,
+      setNodes,
+      setSelectedNodeIds,
+      setSelectedSpaceIds,
+    ],
+  )
+
+  const finalizeSpaceInteraction = useCallback(
+    (dragState: SpaceDragState, clientX: number, clientY: number) => {
+      const screenDx = clientX - dragState.startClient.x
+      const screenDy = clientY - dragState.startClient.y
+      const shouldTreatAsClick = Math.hypot(screenDx, screenDy) <= 6
+
+      if (shouldTreatAsClick) {
+        finalizeSpaceDrag(dragState, 0, 0)
+        applySpaceClickSelection(dragState.spaceId, { toggle: dragState.shiftKey })
+        spaceDragStateRef.current = null
+        setSpaceFramePreview(null)
+        spaceDragSawPointerMoveRef.current = false
+        return
+      }
+
+      const endFlow = reactFlow.screenToFlowPosition({
+        x: clientX,
+        y: clientY,
+      })
+      const dx = endFlow.x - dragState.startFlow.x
+      const dy = endFlow.y - dragState.startFlow.y
+
+      finalizeSpaceDrag(dragState, dx, dy)
+      spaceDragStateRef.current = null
+      setSpaceFramePreview(null)
+      spaceDragSawPointerMoveRef.current = false
+    },
+    [applySpaceClickSelection, finalizeSpaceDrag, reactFlow],
+  )
+
   const handleSpaceDragPointerMove = useCallback(
     (event: PointerEvent) => {
       const dragState = spaceDragStateRef.current
@@ -237,19 +324,9 @@ export function useWorkspaceCanvasSpaceDrag({
         return
       }
 
-      const endFlow = reactFlow.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      })
-      const dx = endFlow.x - dragState.startFlow.x
-      const dy = endFlow.y - dragState.startFlow.y
-
-      finalizeSpaceDrag(dragState, dx, dy)
-      spaceDragStateRef.current = null
-      setSpaceFramePreview(null)
-      spaceDragSawPointerMoveRef.current = false
+      finalizeSpaceInteraction(dragState, event.clientX, event.clientY)
     },
-    [finalizeSpaceDrag, reactFlow],
+    [finalizeSpaceInteraction],
   )
 
   const handleSpaceDragMouseMove = useCallback(
@@ -295,19 +372,9 @@ export function useWorkspaceCanvasSpaceDrag({
         return
       }
 
-      const endFlow = reactFlow.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      })
-      const dx = endFlow.x - dragState.startFlow.x
-      const dy = endFlow.y - dragState.startFlow.y
-
-      finalizeSpaceDrag(dragState, dx, dy)
-      spaceDragStateRef.current = null
-      setSpaceFramePreview(null)
-      spaceDragSawPointerMoveRef.current = false
+      finalizeSpaceInteraction(dragState, event.clientX, event.clientY)
     },
-    [finalizeSpaceDrag, reactFlow],
+    [finalizeSpaceInteraction],
   )
 
   useEffect(() => {
@@ -373,68 +440,20 @@ export function useWorkspaceCanvasSpaceDrag({
         }
       }
 
-      const movableNodes = (() => {
-        if (handle.kind !== 'move') {
-          return []
-        }
-
-        const movableNodeIds = new Set<string>([
-          ...targetSpace.nodeIds,
-          ...selectedNodeIdsRef.current,
-        ])
-
-        return [...movableNodeIds]
-          .map(nodeId => nodesRef.current.find(node => node.id === nodeId))
-          .filter((node): node is Node<TerminalNodeData> => Boolean(node))
-      })()
-
-      const ownedBounds =
-        handle.kind === 'resize'
-          ? (() => {
-              const ownedNodes = targetSpace.nodeIds
-                .map(nodeId => nodesRef.current.find(node => node.id === nodeId))
-                .filter((node): node is Node<TerminalNodeData> => Boolean(node))
-
-              if (ownedNodes.length === 0) {
-                return null
-              }
-
-              let left = Number.POSITIVE_INFINITY
-              let top = Number.POSITIVE_INFINITY
-              let right = Number.NEGATIVE_INFINITY
-              let bottom = Number.NEGATIVE_INFINITY
-
-              for (const node of ownedNodes) {
-                left = Math.min(left, node.position.x)
-                top = Math.min(top, node.position.y)
-                right = Math.max(right, node.position.x + node.data.width)
-                bottom = Math.max(bottom, node.position.y + node.data.height)
-              }
-
-              if (
-                !Number.isFinite(left) ||
-                !Number.isFinite(top) ||
-                !Number.isFinite(right) ||
-                !Number.isFinite(bottom)
-              ) {
-                return null
-              }
-
-              return { left, top, right, bottom }
-            })()
-          : null
-
-      spaceDragStateRef.current = {
+      spaceDragStateRef.current = createSpaceDragState({
         pointerId: 'pointerId' in event ? event.pointerId : -1,
         spaceId,
         startFlow,
-        initialRect: targetSpace.rect,
-        initialNodePositions: new Map(
-          movableNodes.map(node => [node.id, { x: node.position.x, y: node.position.y }]),
-        ),
-        ownedBounds,
+        startClient: {
+          x: event.clientX,
+          y: event.clientY,
+        },
+        shiftKey: event.shiftKey,
+        targetSpace,
         handle,
-      }
+        nodes: nodesRef.current,
+        selectedNodeIds: selectedNodeIdsRef.current,
+      })
       spaceDragSawPointerMoveRef.current = false
       setSpaceFramePreview({
         spaceId,

@@ -232,10 +232,14 @@ export function TaskNode({
           return
         }
 
-        if (!(event.target instanceof Element) || event.target.closest('.nodrag')) {
+        if (
+          !(event.target instanceof Element) ||
+          event.target.closest('.nodrag, button, input, textarea, select, a')
+        ) {
           return
         }
 
+        event.stopPropagation()
         onInteractionStart?.({ shiftKey: event.shiftKey })
       }}
       onWheel={event => {
@@ -268,6 +272,9 @@ export function TaskNode({
               setIsTitleEditing(true)
             }}
             onPointerDown={event => {
+              event.stopPropagation()
+            }}
+            onClick={event => {
               event.stopPropagation()
             }}
             onChange={event => {
@@ -357,6 +364,9 @@ export function TaskNode({
               setIsRequirementEditing(true)
             }}
             onPointerDown={event => {
+              event.stopPropagation()
+            }}
+            onClick={event => {
               event.stopPropagation()
             }}
             onChange={event => {

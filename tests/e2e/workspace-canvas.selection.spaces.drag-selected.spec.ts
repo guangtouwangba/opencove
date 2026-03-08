@@ -7,6 +7,82 @@ import {
 } from './workspace-canvas.helpers'
 
 test.describe('Workspace Canvas - Selection (Spaces)', () => {
+  test('toggles selected space off with shift-click on the region', async () => {
+    const { electronApp, window } = await launchApp()
+
+    try {
+      await clearAndSeedWorkspace(
+        window,
+        [
+          {
+            id: 'shift-click-space-node',
+            title: 'terminal-shift-click-space',
+            position: { x: 220, y: 180 },
+            width: 240,
+            height: 160,
+          },
+        ],
+        {
+          spaces: [
+            {
+              id: 'shift-click-space',
+              name: 'Shift Click Space',
+              directoryPath: testWorkspacePath,
+              nodeIds: ['shift-click-space-node'],
+              rect: { x: 200, y: 160, width: 540, height: 380 },
+            },
+          ],
+          activeSpaceId: null,
+          settings: {
+            canvasInputMode: 'trackpad',
+          },
+        },
+      )
+
+      const pane = window.locator('.workspace-canvas .react-flow__pane')
+      await expect(pane).toBeVisible()
+
+      const spaceRegion = window.locator('.workspace-space-region').first()
+      await expect(spaceRegion).toBeVisible()
+      const paneBox = await pane.boundingBox()
+      const spaceBox = await spaceRegion.boundingBox()
+      if (!paneBox || !spaceBox) {
+        throw new Error('workspace pane/space bounding box unavailable')
+      }
+
+      const selectionStartX = paneBox.x + 40
+      const selectionStartY = paneBox.y + 40
+      const selectionEndX = Math.min(
+        paneBox.x + paneBox.width - 24,
+        spaceBox.x + spaceBox.width * 0.35,
+      )
+      const selectionEndY = Math.min(
+        paneBox.y + paneBox.height - 24,
+        spaceBox.y + spaceBox.height * 0.35,
+      )
+
+      await window.mouse.move(selectionStartX, selectionStartY)
+      await window.mouse.down()
+      await window.mouse.move(selectionEndX, selectionEndY, { steps: 10 })
+      await window.mouse.up()
+
+      await expect(window.locator('.workspace-space-region--selected')).toHaveCount(1)
+
+      const selectedMoveHandle = window.locator(
+        '[data-testid="workspace-space-drag-shift-click-space-move"]',
+      )
+      await expect(selectedMoveHandle).toBeVisible()
+
+      await window.keyboard.down('Shift')
+      await selectedMoveHandle.click()
+      await window.keyboard.up('Shift')
+
+      await expect(window.locator('.workspace-space-region--selected')).toHaveCount(0)
+    } finally {
+      await electronApp.close()
+    }
+  })
+
   test('drags selected space by grabbing the region', async () => {
     const { electronApp, window } = await launchApp()
 

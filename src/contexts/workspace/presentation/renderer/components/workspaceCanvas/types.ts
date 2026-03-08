@@ -88,6 +88,8 @@ export interface SpaceDragState {
   pointerId: number
   spaceId: string
   startFlow: Point
+  startClient: Point
+  shiftKey: boolean
   initialRect: WorkspaceSpaceRect
   initialNodePositions: Map<string, Point>
   ownedBounds: { left: number; top: number; right: number; bottom: number } | null

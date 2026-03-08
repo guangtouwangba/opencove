@@ -24,6 +24,7 @@
     - `L`：只有存在真实子类型替换时才考虑；不要为了“像 OO”强造继承层级。
     - `I`：`preload / service / bridge` 接口要小而专用，不暴露大而全 API。
     - `D`：高层依赖抽象端口和类型，不直接依赖 `Electron / PTY / CLI` 细节。
+7.  **结构优先于补丁 (Prefer Structural Clarity over Patch Accumulation)**: 不要等问题复发后才升级。只要任务本身已经暴露出 `多个 mutable state owner`、`边界/权限含混`、`同一入口承载多套竞争语义或解释路径`、或 `局部修补会制造隐藏/矛盾状态`，就应先收敛结构而不是继续叠 patch。
 
 ### 架构执行触发器 (Architecture Execution Triggers)
 
@@ -35,6 +36,7 @@
     - 同一函数同时包含 `状态判定 + 外部调用 + fallback/retry + 写回`。
     - 同一次改动同时触及 `lifecycle / persistence / hydration / resume / watcher` 中两项及以上。
 3.  **高风险路径先写不变量**：启动、恢复、关闭、重试、fallback、异步乱序相关改动，先写 `1-3` 条 invariant，再决定实现位置与测试层级。
+4.  **结构性风险先升级判断**：以下信号任中其一，就必须按 Large Change 处理，而不是直接以最小改动修补：`多个 mutable state owner`、`边界或 authority 难以解释`、`同一入口/输入/观测承载多套竞争语义或状态迁移`、`局部 patch 可能制造新的矛盾状态或隐藏状态`、`同一真相被 runtime observation 与 durable state 同时改写`。是否“已经复发”只作为额外证据，不作为触发前提。
 
 ### 高风险问题预防策略（只列最容易漏的）
 
@@ -53,7 +55,9 @@
     - `Integration`：hydration、persistence、restart、lifecycle、watcher 协作。
     - `E2E`：只覆盖关键用户路径，不替代前三级。
     - 触及 `lifecycle / persistence / IPC / external session watcher / async concurrency` 的 PR，至少要有一条跨边界回归测试。
-6.  **每个真实 bug 都要资产化**：至少沉淀为以下之一：回归测试、运行时断言、文档规则、抽象收敛。同类 bug 第二次出现时，优先升维修模型/抽象，不再只补局部 patch。
+6.  **结构分析先于实现**：凡命中结构性风险信号，实现前至少产出一份最小分析：`mutable state owner 表`、`边界/路由图（按场景可对应事件、消息、watcher、lifecycle）`、`1-3` 条 invariants，以及 `局部 patch vs 抽象收敛` 的 trade-off 说明。缺少这些信息时，不进入编码。
+7.  **边界驱动系统先识别 source / route / owner**：涉及事件、消息、watcher、回调、lifecycle 或其他边界驱动系统的冲突时，先明确 `谁发出`、`谁路由`、`谁拥有默认行为`、`谁拥有状态写权`。任何需要靠隐式副作用才能维持正确性的实现，都默认视为结构问题。
+8.  **每个真实 bug 都要资产化**：至少沉淀为以下之一：回归测试、运行时断言、文档规则、抽象收敛。若在分析阶段已经能看出同一结构弱点会导出多个相邻故障模式，就必须直接升级为系统性治理任务，目标是合并 owner、消除重复写入口或收敛交互抽象，而不是等待再次复发。
 
 ## 全局硬规则（摘要）
 
@@ -61,7 +65,7 @@
 -   **Small vs Large**（详见 `AGENTS.md`）：
     -   **Small**：直接做，小步快反馈，跑针对性验证。
     -   **Large / 运行时高风险**：遵循 **Spec -> (Feasibility Check) -> Plan** 流程。
-        -   **高风险触发器（最易漏）**：启动/重启恢复、hydration、持久化写回、退出生命周期、跨层状态同步、external CLI / watcher 回写、fallback/cleanup 改写状态、多写者共享同一真相。
+        -   **高风险触发器（最易漏）**：启动/重启恢复、hydration、持久化写回、退出生命周期、跨层状态同步、external CLI / watcher 回写、fallback/cleanup 改写状态、多写者共享同一真相、边界冲突、同一入口对应多套竞争语义。
         -   **Spec**：明确验收标准、风险点及验证手段，等待确认。
         -   **Feasibility Check**：针对新技术/高性能/核心重构，必须先调研并跑通 PoC。
         -   **Plan**：制定详细执行计划，等待确认。

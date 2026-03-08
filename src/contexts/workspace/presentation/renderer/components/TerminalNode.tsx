@@ -18,6 +18,7 @@ import {
 } from './terminalNode/screenStateCache'
 import { TerminalNodeHeader } from './terminalNode/TerminalNodeHeader'
 import { resolveSuffixPrefixOverlap } from './terminalNode/overlap'
+import { resolveTerminalNodeInteraction } from './terminalNode/interaction'
 import { useTerminalResize } from './terminalNode/useTerminalResize'
 import { useTerminalScrollback } from './terminalNode/useScrollback'
 import { shouldStopWheelPropagation } from './terminalNode/wheel'
@@ -439,19 +440,14 @@ export function TerminalNode({
           return
         }
 
-        if (!(event.target instanceof Element)) {
+        const interaction = resolveTerminalNodeInteraction(event.target)
+        if (!interaction) {
           return
         }
 
-        const shouldNormalizeViewport = Boolean(event.target.closest('.terminal-node__terminal'))
-        const shouldIgnoreSelection = Boolean(event.target.closest('.terminal-node__resizer'))
-
-        if (shouldIgnoreSelection) {
-          return
-        }
-
+        event.stopPropagation()
         onInteractionStart?.({
-          normalizeViewport: shouldNormalizeViewport,
+          normalizeViewport: interaction.normalizeViewport,
           shiftKey: event.shiftKey,
         })
       }}

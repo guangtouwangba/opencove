@@ -143,13 +143,15 @@ test.describe('Workspace Canvas - Selection (Spaces)', () => {
         window.locator('.react-flow__node.selected .terminal-node__title'),
       ).toContainText('terminal-marquee-boundary-inside')
 
-      const insideBox = await insideNode.boundingBox()
-      if (!insideBox) {
-        throw new Error('inside node bounding box unavailable')
+      const insideHeader = insideNode.locator('.terminal-node__header')
+      await expect(insideHeader).toBeVisible()
+      const insideHeaderBox = await insideHeader.boundingBox()
+      if (!insideHeaderBox) {
+        throw new Error('inside node header bounding box unavailable')
       }
 
-      const dragStartX = insideBox.x + insideBox.width * 0.5
-      const dragStartY = insideBox.y + insideBox.height * 0.5
+      const dragStartX = insideHeaderBox.x + insideHeaderBox.width * 0.5
+      const dragStartY = insideHeaderBox.y + insideHeaderBox.height * 0.5
       const dragDx = 180
       const dragDy = 120
 

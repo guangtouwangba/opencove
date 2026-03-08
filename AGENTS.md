@@ -49,7 +49,8 @@ These rules exist to prevent the subtle, non-obvious bugs that appear when the c
 - **Separate Intent / Durable Fact / Runtime Observation / UI Projection**: Never let transient runtime observations (process exit, watcher output, retry fallback, delayed events) silently overwrite the durable source of truth that restart/resume logic depends on unless the business rule explicitly says so.
 - **Prefer Invariants over Scenario Lists**: In specs, reviews, and tests, define 1-3 invariants first. Scenario coverage is infinite; invariants are the compact way to prevent whole bug classes.
 - **Treat Boundaries as Hostile**: The highest-risk moments are startup hydration, shutdown, retries, reconnection, duplicate events, out-of-order async completion, fallback branches, and partial persistence. Assume these can happen at any `await` boundary.
-- **Fix the Bug Class, Not Only the Instance**: Every real bug in lifecycle / persistence / IPC / concurrency paths should produce at least one regression at the lowest meaningful layer and one small rule/assertion/checklist update if the class was previously undocumented.
+- **Escalate Structural Risk Before Repetition**: Do not wait for a bug to recur. If a change involves multiple mutable owners, ambiguous ownership boundaries, multiple interpretations of the same input or observation, or local fixes that can create hidden or contradictory state, treat it as a structural problem before coding.
+- **Turn Bugs into Engineering Assets**: A bug is only fully fixed when the system becomes harder to regress. Every real bug should strengthen tests, assertions, design rules, or abstractions; if one structural weakness can already explain multiple nearby failure modes, elevate it into cleanup work immediately rather than waiting for repetition.
 
 ## 3. Risk & Compliance System (Electron/Cove Specific)
 

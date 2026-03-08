@@ -72,6 +72,9 @@ export function TerminalNodeHeader({
               onPointerDown={event => {
                 event.stopPropagation()
               }}
+              onClick={event => {
+                event.stopPropagation()
+              }}
               onChange={event => {
                 setTitleDraft(event.target.value)
               }}

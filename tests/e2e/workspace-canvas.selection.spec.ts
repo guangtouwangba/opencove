@@ -322,7 +322,14 @@ test.describe('Workspace Canvas - Selection', () => {
       await secondHeader.click({ position: { x: 40, y: 20 } })
       await expect(window.locator('.react-flow__node.selected')).toHaveCount(2)
 
-      await firstHeader.click({ position: { x: 40, y: 20 } })
+      const firstHeaderBox = await firstHeader.boundingBox()
+      if (!firstHeaderBox) {
+        throw new Error('first header bounding box unavailable')
+      }
+
+      await window.mouse.move(firstHeaderBox.x + 40, firstHeaderBox.y + 20)
+      await window.mouse.down()
+      await window.mouse.up()
       await window.keyboard.up('Shift')
 
       await expect(window.locator('.react-flow__node.selected')).toHaveCount(1)

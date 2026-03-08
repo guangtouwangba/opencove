@@ -8,10 +8,12 @@ import type {
   SelectionDraftState,
 } from '../types'
 import { useWorkspaceCanvasSelectionDraft } from './useSelectionDraft'
+import { useWorkspaceCanvasSelectNode } from './useSelectNode'
 import {
   assignNodeToSpaceAndExpand,
   findContainingSpaceByAnchor,
 } from './useInteractions.spaceAssignment'
+import { handleSelectionRectNodeToggle } from './useInteractions.selectionRectToggle'
 
 type SetNodes = (
   updater: (prevNodes: Node<TerminalNodeData>[]) => Node<TerminalNodeData>[],
@@ -84,6 +86,13 @@ export function useWorkspaceCanvasInteractions({
   createTerminalNode: () => Promise<void>
 } {
   const reactFlowStore = useStoreApi()
+  const selectNode = useWorkspaceCanvasSelectNode({
+    setNodes,
+    setSelectedNodeIds,
+    setSelectedSpaceIds,
+    selectedNodeIdsRef,
+    selectedSpaceIdsRef,
+  })
 
   const clearNodeSelection = useCallback(() => {
     setNodes(
@@ -214,8 +223,29 @@ export function useWorkspaceCanvasInteractions({
 
   const ignoreNextPaneClickRef = useRef(false)
 
+  const queueIgnoreNextPaneClick = useCallback(() => {
+    ignoreNextPaneClickRef.current = true
+    window.setTimeout(() => {
+      ignoreNextPaneClickRef.current = false
+    }, 0)
+  }, [])
+
   const handleCanvasPointerDownCaptureWithDragGuard = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
+      if (
+        handleSelectionRectNodeToggle({
+          event,
+          reactFlow,
+          toggleNode: nodeId => {
+            selectNode(nodeId, { toggle: true })
+          },
+          queueIgnoreNextPaneClick,
+        })
+      ) {
+        paneDragRef.current = null
+        return
+      }
+
       if (
         event.button === 0 &&
         !isTrackpadCanvasMode &&
@@ -238,7 +268,14 @@ export function useWorkspaceCanvasInteractions({
 
       handleCanvasPointerDownCapture(event)
     },
-    [handleCanvasPointerDownCapture, isShiftPressedRef, isTrackpadCanvasMode],
+    [
+      handleCanvasPointerDownCapture,
+      isShiftPressedRef,
+      isTrackpadCanvasMode,
+      queueIgnoreNextPaneClick,
+      reactFlow,
+      selectNode,
+    ],
   )
 
   const handleCanvasPointerMoveCaptureWithDragGuard = useCallback(
@@ -269,13 +306,10 @@ export function useWorkspaceCanvasInteractions({
       const didCommitSelectionDraft = handleCanvasPointerUpCapture(event)
 
       if (draft?.didMove || didCommitSelectionDraft) {
-        ignoreNextPaneClickRef.current = true
-        window.setTimeout(() => {
-          ignoreNextPaneClickRef.current = false
-        }, 0)
+        queueIgnoreNextPaneClick()
       }
     },
-    [handleCanvasPointerUpCapture, selectionDraftRef],
+    [handleCanvasPointerUpCapture, queueIgnoreNextPaneClick, selectionDraftRef],
   )
 
   const handleCanvasDoubleClickCapture = useCallback(
