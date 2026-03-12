@@ -14,7 +14,10 @@ import {
   WorkspaceSpaceBranchRenameDialog,
   type BranchRenameState,
 } from './WorkspaceSpaceBranchRenameDialog'
-import { WorkspaceSpaceRegion } from './WorkspaceSpaceRegion'
+import {
+  WorkspaceSpaceRegionItem,
+  type WorkspaceSpaceBranchBadge,
+} from './WorkspaceSpaceRegionItem'
 
 interface WorkspaceSpaceRegionsOverlayProps {
   workspacePath: string
@@ -260,7 +263,7 @@ export function WorkspaceSpaceRegionsOverlay({
             : null
           const isSelected = selectedSpaceIdSet.has(space.id)
 
-          const resolvedBranchBadge = resolvedWorktreeInfo
+          const resolvedBranchBadge: WorkspaceSpaceBranchBadge | null = resolvedWorktreeInfo
             ? resolvedWorktreeInfo.branch
               ? {
                   kind: 'Branch',
@@ -277,7 +280,7 @@ export function WorkspaceSpaceRegionsOverlay({
             : null
 
           return (
-            <WorkspaceSpaceRegion
+            <WorkspaceSpaceRegionItem
               key={space.id}
               space={space}
               resolvedRect={resolvedRect}
@@ -289,12 +292,22 @@ export function WorkspaceSpaceRegionsOverlay({
               commitSpaceRename={commitSpaceRename}
               cancelSpaceRename={cancelSpaceRename}
               startSpaceRename={startSpaceRename}
-              resolvedWorktreeInfo={resolvedWorktreeInfo}
-              resolvedBranchBadge={resolvedBranchBadge}
               handleSpaceDragHandlePointerDown={handleSpaceDragHandlePointerDown}
               updateHandleCursor={updateHandleCursor}
+              resolvedWorktreeInfo={resolvedWorktreeInfo}
+              resolvedBranchBadge={resolvedBranchBadge}
+              onStartBranchRename={({ spaceId, spaceName, worktreePath, branchName }) => {
+                setBranchRename({
+                  spaceId,
+                  spaceName,
+                  worktreePath,
+                  currentName: branchName,
+                  nextName: branchName,
+                  isSubmitting: false,
+                  error: null,
+                })
+              }}
               onOpenSpaceMenu={onOpenSpaceMenu}
-              setBranchRename={setBranchRename}
             />
           )
         })}

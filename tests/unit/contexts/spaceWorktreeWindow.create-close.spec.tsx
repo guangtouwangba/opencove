@@ -1,31 +1,15 @@
 import React from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import type { Node } from '@xyflow/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_AGENT_SETTINGS } from '../../../src/contexts/settings/domain/agentSettings'
 import { SpaceWorktreeWindow } from '../../../src/contexts/workspace/presentation/renderer/components/workspaceCanvas/windows/SpaceWorktreeWindow'
-import type {
-  TerminalNodeData,
-  WorkspaceSpaceState,
-} from '../../../src/contexts/workspace/presentation/renderer/types'
-
-function createNodes(): Node<TerminalNodeData>[] {
-  return []
-}
-
-function createSpaces(directoryPath = '/repo'): WorkspaceSpaceState[] {
-  return [
-    {
-      id: 'space-1',
-      name: 'Space 1',
-      directoryPath,
-      nodeIds: [],
-      rect: null,
-    },
-  ]
-}
+import { clearWorktreeApi, createNodes, createSpaces } from './spaceWorktreeWindow.testUtils'
 
 describe('SpaceWorktreeWindow create flow', () => {
+  afterEach(() => {
+    clearWorktreeApi()
+  })
+
   it('calls onClose after creating and binding a worktree', async () => {
     const listBranches = vi.fn(async () => ({
       current: 'main',
@@ -33,6 +17,9 @@ describe('SpaceWorktreeWindow create flow', () => {
     }))
     const listWorktrees = vi.fn(async () => ({
       worktrees: [{ path: '/repo', head: 'abc', branch: 'main' }],
+    }))
+    const statusSummary = vi.fn(async () => ({
+      changedFileCount: 0,
     }))
     const create = vi.fn(async () => ({
       worktree: {
@@ -51,6 +38,7 @@ describe('SpaceWorktreeWindow create flow', () => {
         worktree: {
           listBranches,
           listWorktrees,
+          statusSummary,
           suggestNames: vi.fn(async () => ({
             branchName: 'space/demo',
             worktreeName: 'demo',
@@ -85,6 +73,7 @@ describe('SpaceWorktreeWindow create flow', () => {
     await waitFor(() => {
       expect(listBranches).toHaveBeenCalledTimes(1)
       expect(listWorktrees).toHaveBeenCalledTimes(1)
+      expect(statusSummary).toHaveBeenCalledTimes(1)
       expect(screen.getByTestId('space-worktree-create')).not.toBeDisabled()
     })
 

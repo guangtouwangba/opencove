@@ -17,9 +17,20 @@ describe('WorkspaceSection', () => {
     )
 
     expect(screen.getByText('Workspace Worktree')).toBeVisible()
+    expect(screen.getByTestId('settings-workspace-path-display')).toHaveTextContent('demo')
+    expect(screen.getByTestId('settings-workspace-path-display')).toHaveAttribute(
+      'title',
+      '/repo/demo',
+    )
     expect(screen.getByTestId('settings-worktree-root')).toHaveValue('.opencove/worktrees')
     expect(screen.getByText(/Relative path is based on project root/i)).toBeVisible()
-    expect(screen.getByText('/repo/demo/.opencove/worktrees')).toBeVisible()
+    expect(screen.getByTestId('settings-resolved-worktree-path-display')).toHaveTextContent(
+      '.../.opencove/worktrees',
+    )
+    expect(screen.getByTestId('settings-resolved-worktree-path-display')).toHaveAttribute(
+      'title',
+      '/repo/demo/.opencove/worktrees',
+    )
 
     fireEvent.change(screen.getByTestId('settings-worktree-root'), {
       target: { value: '/tmp/custom-worktrees' },

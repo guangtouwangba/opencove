@@ -23,6 +23,14 @@ export interface ListGitWorktreesResult {
   worktrees: GitWorktreeInfo[]
 }
 
+export interface GetGitStatusSummaryInput {
+  repoPath: string
+}
+
+export interface GetGitStatusSummaryResult {
+  changedFileCount: number
+}
+
 export type CreateGitWorktreeBranchMode =
   | { kind: 'new'; name: string; startPoint: string }
   | { kind: 'existing'; name: string }

@@ -59,15 +59,7 @@ export function ModelOverrideSection(props: {
         const addInputValue = addModelInputByProvider[provider]
 
         return (
-          <div
-            className="settings-provider-card"
-            key={provider}
-            style={{
-              borderTop: 'none',
-              padding: '24px 0',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
-            }}
-          >
+          <div className="settings-provider-card" key={provider}>
             <div className="settings-provider-card__header">
               <strong style={{ fontSize: '14px', color: '#fff' }}>
                 {AGENT_PROVIDER_LABEL[provider]}
@@ -122,10 +114,9 @@ export function ModelOverrideSection(props: {
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', marginTop: '16px', width: '100%' }}>
+                <div className="settings-panel__input-row" style={{ marginTop: '16px' }}>
                   <input
                     type="text"
-                    style={{ flex: 1 }}
                     data-testid={`settings-custom-model-add-input-${provider}`}
                     value={addInputValue}
                     placeholder="Add model..."

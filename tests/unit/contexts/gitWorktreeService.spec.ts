@@ -157,6 +157,27 @@ describe('GitWorktreeService', () => {
   )
 
   it(
+    'counts changed files from git status',
+    async () => {
+      repoDir = await createTempRepo()
+      const canonicalRepoDir = await realpath(repoDir)
+
+      await mkdir(join(repoDir, 'drafts', 'nested'), { recursive: true })
+
+      const { getGitStatusSummary } =
+        await import('../../../src/contexts/worktree/infrastructure/git/GitWorktreeService')
+
+      await writeFile(join(repoDir, 'README.md'), '# temp updated\n', 'utf8')
+      await writeFile(join(repoDir, 'drafts', 'nested', 'notes.md'), 'draft\n', 'utf8')
+      await writeFile(join(repoDir, 'drafts', 'nested', 'todo.md'), 'todo\n', 'utf8')
+
+      const summary = await getGitStatusSummary({ repoPath: canonicalRepoDir })
+      expect(summary).toEqual({ changedFileCount: 3 })
+    },
+    GIT_WORKTREE_TEST_TIMEOUT_MS,
+  )
+
+  it(
     'rejects adding a worktree for a branch already checked out elsewhere',
     async () => {
       repoDir = await createTempRepo()

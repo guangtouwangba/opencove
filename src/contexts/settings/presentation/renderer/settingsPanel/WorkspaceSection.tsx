@@ -21,6 +21,16 @@ function getFolderName(path: string): string {
   return parts[parts.length - 1] || path
 }
 
+function getTrailingPathSegments(path: string, segmentCount: number): string {
+  const normalized = path.replace(/[/]+$/, '')
+  const parts = normalized.split(/[/]/).filter(Boolean)
+  if (parts.length <= segmentCount) {
+    return normalized || path
+  }
+
+  return `.../${parts.slice(-segmentCount).join('/')}`
+}
+
 export function WorkspaceSection({
   workspaceName,
   workspacePath,
@@ -70,38 +80,16 @@ export function WorkspaceSection({
         <>
           <div className="settings-panel__row">
             <div className="settings-panel__row-label">
-              <strong>Project</strong>
-              <span>Current project selected for worktree configuration.</span>
+              <strong>Workspace Path</strong>
+              <span>Project root for {resolvedWorkspaceName}.</span>
             </div>
             <div className="settings-panel__control">
               <span
-                style={{
-                  fontSize: '12px',
-                  color: '#666',
-                  wordBreak: 'break-all',
-                  textAlign: 'right',
-                }}
+                className="settings-panel__path-chip"
+                data-testid="settings-workspace-path-display"
+                title={workspacePath}
               >
-                {resolvedWorkspaceName}
-              </span>
-            </div>
-          </div>
-
-          <div className="settings-panel__row">
-            <div className="settings-panel__row-label">
-              <strong>Project Path</strong>
-              <span>Full filesystem path to the project root.</span>
-            </div>
-            <div className="settings-panel__control">
-              <span
-                style={{
-                  fontSize: '12px',
-                  color: '#666',
-                  wordBreak: 'break-all',
-                  textAlign: 'right',
-                }}
-              >
-                {workspacePath}
+                {getFolderName(workspacePath)}
               </span>
             </div>
           </div>
@@ -111,10 +99,7 @@ export function WorkspaceSection({
               <strong>Worktree Root</strong>
               <span>Relative path is based on project root.</span>
             </div>
-            <div
-              className="settings-panel__control"
-              style={{ flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}
-            >
+            <div className="settings-panel__control settings-panel__control--stack">
               <input
                 data-testid="settings-worktree-root"
                 value={worktreesRoot}
@@ -135,18 +120,15 @@ export function WorkspaceSection({
           <div className="settings-panel__row">
             <div className="settings-panel__row-label">
               <strong>Resolved Path</strong>
-              <span>The actual path where worktrees will be created.</span>
+              <span>Where new worktrees will be created.</span>
             </div>
             <div className="settings-panel__control">
               <span
-                style={{
-                  fontSize: '12px',
-                  color: '#888',
-                  wordBreak: 'break-all',
-                  textAlign: 'right',
-                }}
+                className="settings-panel__path-chip"
+                data-testid="settings-resolved-worktree-path-display"
+                title={resolvedRoot}
               >
-                {resolvedRoot}
+                {getTrailingPathSegments(resolvedRoot, 2)}
               </span>
             </div>
           </div>

@@ -1,5 +1,4 @@
 import React from 'react'
-import { Bot, Monitor, TriangleAlert } from 'lucide-react'
 
 export interface SpaceWorktreeGuardState {
   spaceName: string
@@ -26,6 +25,8 @@ export function SpaceWorktreeGuardWindow({
     return null
   }
 
+  const windowSummary = `${guard.agentCount} agent${guard.agentCount === 1 ? '' : 's'} · ${guard.terminalCount} terminal${guard.terminalCount === 1 ? '' : 's'}`
+
   return (
     <div
       className="cove-window-backdrop workspace-space-worktree-guard-backdrop"
@@ -44,44 +45,18 @@ export function SpaceWorktreeGuardWindow({
           event.stopPropagation()
         }}
       >
-        <div className="workspace-space-worktree-guard__eyebrow">Action blocked</div>
-        <div className="workspace-space-worktree-guard__hero">
-          <div className="workspace-space-worktree-guard__alert-icon" aria-hidden="true">
-            <TriangleAlert size={20} />
-          </div>
-          <div className="workspace-space-worktree-guard__hero-copy">
-            <h3>{guard.pendingLabel}</h3>
-            <p>
-              Space <strong>{guard.spaceName}</strong> still has active windows bound to its current
-              directory.
-            </p>
-          </div>
-        </div>
-
-        <section className="workspace-space-worktree-guard__notice">
-          <strong>Close those windows before continuing.</strong>
-          <p>
-            {guard.allowMarkMismatch
-              ? 'You can close everything now, or continue by marking the current windows as DIR MISMATCH.'
-              : 'This action changes worktree binding and metadata, so every active window in this space must be closed first.'}
+        <div className="workspace-space-worktree__message-block">
+          <h3>{guard.pendingLabel}</h3>
+          <p className="workspace-space-worktree__lead">
+            Space <strong>{guard.spaceName}</strong> still has active windows bound to its current
+            directory.
           </p>
-        </section>
-
-        <div className="workspace-space-worktree-guard__stats">
-          <div className="workspace-space-worktree-guard__stat-card">
-            <div className="workspace-space-worktree-guard__stat-label">
-              <Bot size={15} aria-hidden="true" />
-              <span>Agents</span>
-            </div>
-            <strong>{guard.agentCount}</strong>
-          </div>
-          <div className="workspace-space-worktree-guard__stat-card">
-            <div className="workspace-space-worktree-guard__stat-label">
-              <Monitor size={15} aria-hidden="true" />
-              <span>Terminals</span>
-            </div>
-            <strong>{guard.terminalCount}</strong>
-          </div>
+          <p className="workspace-space-worktree__supporting-text">
+            {guard.allowMarkMismatch
+              ? 'Close them first, or continue by marking those windows as DIR MISMATCH.'
+              : 'Close those windows first. This action changes worktree binding and metadata for the space.'}
+          </p>
+          <p className="workspace-space-worktree-guard__summary">{windowSummary}</p>
         </div>
 
         {guard.error ? (

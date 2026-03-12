@@ -5,19 +5,23 @@ import { getWorktreeApiMethod } from './spaceWorktree.shared'
 
 export function useSpaceWorktreeRefresh({
   workspacePath,
+  statusPath,
   setIsLoading,
   setError,
   setBranches,
   setCurrentBranch,
+  setChangedFileCount,
   setWorktrees,
   setExistingBranchName,
   setStartPoint,
 }: {
   workspacePath: string
+  statusPath: string
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
   setError: React.Dispatch<React.SetStateAction<string | null>>
   setBranches: React.Dispatch<React.SetStateAction<string[]>>
   setCurrentBranch: React.Dispatch<React.SetStateAction<string | null>>
+  setChangedFileCount: React.Dispatch<React.SetStateAction<number>>
   setWorktrees: React.Dispatch<React.SetStateAction<GitWorktreeInfo[]>>
   setExistingBranchName: React.Dispatch<React.SetStateAction<string>>
   setStartPoint: React.Dispatch<React.SetStateAction<string>>
@@ -29,13 +33,16 @@ export function useSpaceWorktreeRefresh({
     try {
       const listBranches = getWorktreeApiMethod('listBranches')
       const listWorktrees = getWorktreeApiMethod('listWorktrees')
-      const [branchesResult, worktreesResult] = await Promise.all([
+      const statusSummary = getWorktreeApiMethod('statusSummary')
+      const [branchesResult, worktreesResult, statusSummaryResult] = await Promise.all([
         listBranches({ repoPath: workspacePath }),
         listWorktrees({ repoPath: workspacePath }),
+        statusSummary({ repoPath: statusPath }),
       ])
 
       setBranches(branchesResult.branches)
       setCurrentBranch(branchesResult.current)
+      setChangedFileCount(statusSummaryResult.changedFileCount)
       setWorktrees(worktreesResult.worktrees)
 
       setExistingBranchName(previous =>
@@ -58,12 +65,14 @@ export function useSpaceWorktreeRefresh({
     }
   }, [
     setBranches,
+    setChangedFileCount,
     setCurrentBranch,
     setError,
     setExistingBranchName,
     setIsLoading,
     setStartPoint,
     setWorktrees,
+    statusPath,
     workspacePath,
   ])
 }

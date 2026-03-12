@@ -45,8 +45,10 @@ test.describe('Settings', () => {
       await expect(defaultProvider).toBeVisible()
       await defaultProvider.selectOption('codex')
 
-      const taskTagsNav = window.locator('[data-testid="settings-section-nav-task-tags"]')
-      await taskTagsNav.click()
+      const taskConfigurationNav = window.locator(
+        '[data-testid="settings-section-nav-task-configuration"]',
+      )
+      await taskConfigurationNav.click()
 
       const addTaskTagInput = window.locator('[data-testid="settings-task-tag-add-input"]')
       await addTaskTagInput.fill('ops')

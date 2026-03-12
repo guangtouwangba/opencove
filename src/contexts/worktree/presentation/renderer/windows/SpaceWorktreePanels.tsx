@@ -17,7 +17,6 @@ export function SpaceWorktreePanels({
   startPoint,
   existingBranchName,
   deleteBranchOnArchive,
-  archiveSpaceOnArchive,
   onClose,
   onBranchModeChange,
   onNewBranchNameChange,
@@ -26,7 +25,6 @@ export function SpaceWorktreePanels({
   onSuggestNames,
   onCreate,
   onDeleteBranchOnArchiveChange,
-  onArchiveSpaceOnArchiveChange,
   onArchive,
 }: {
   space: WorkspaceSpaceState
@@ -42,7 +40,6 @@ export function SpaceWorktreePanels({
   startPoint: string
   existingBranchName: string
   deleteBranchOnArchive: boolean
-  archiveSpaceOnArchive: boolean
   onClose: () => void
   onBranchModeChange: (mode: BranchMode) => void
   onNewBranchNameChange: (value: string) => void
@@ -51,7 +48,6 @@ export function SpaceWorktreePanels({
   onSuggestNames: () => void
   onCreate: () => void
   onDeleteBranchOnArchiveChange: (checked: boolean) => void
-  onArchiveSpaceOnArchiveChange: (checked: boolean) => void
   onArchive: () => void
 }): React.JSX.Element {
   return (
@@ -60,31 +56,24 @@ export function SpaceWorktreePanels({
         <div className="workspace-space-worktree__view" data-testid="space-worktree-create-view">
           <div className="workspace-space-worktree__view-header">
             <h4>Create worktree</h4>
-            <button
-              type="button"
-              className="cove-window__action cove-window__action--ghost"
-              data-testid="space-worktree-close-inline"
-              disabled={isBusy}
-              onClick={onClose}
-            >
-              Close
-            </button>
           </div>
 
-          <section className="workspace-space-worktree__surface">
-            <p className="workspace-space-worktree__hint">
-              OpenCove will generate the internal worktree path automatically.
-            </p>
-
-            <div className="workspace-space-worktree__mode-tabs">
+          <section className="workspace-space-worktree__surface workspace-space-worktree__surface--minimal">
+            <div
+              className="workspace-space-worktree__segment-control"
+              role="tablist"
+              aria-label="Branch mode"
+            >
               <button
                 type="button"
                 className={
                   branchMode === 'new'
-                    ? 'workspace-space-worktree__mode-tab workspace-space-worktree__mode-tab--active'
-                    : 'workspace-space-worktree__mode-tab'
+                    ? 'workspace-space-worktree__segment workspace-space-worktree__segment--active'
+                    : 'workspace-space-worktree__segment'
                 }
                 data-testid="space-worktree-mode-new"
+                role="tab"
+                aria-selected={branchMode === 'new'}
                 disabled={isBusy}
                 onClick={() => {
                   onBranchModeChange('new')
@@ -96,10 +85,12 @@ export function SpaceWorktreePanels({
                 type="button"
                 className={
                   branchMode === 'existing'
-                    ? 'workspace-space-worktree__mode-tab workspace-space-worktree__mode-tab--active'
-                    : 'workspace-space-worktree__mode-tab'
+                    ? 'workspace-space-worktree__segment workspace-space-worktree__segment--active'
+                    : 'workspace-space-worktree__segment'
                 }
                 data-testid="space-worktree-mode-existing"
+                role="tab"
+                aria-selected={branchMode === 'existing'}
                 disabled={isBusy}
                 onClick={() => {
                   onBranchModeChange('existing')
@@ -109,95 +100,99 @@ export function SpaceWorktreePanels({
               </button>
             </div>
 
-            {branchMode === 'new' ? (
-              <div
-                className="workspace-space-worktree__create-grid"
-                data-testid="space-worktree-create-grid"
-              >
-                <div className="cove-window__field-row">
-                  <label htmlFor="space-worktree-start-point">Start point</label>
-                  <select
-                    id="space-worktree-start-point"
-                    data-testid="space-worktree-start-point"
-                    value={startPoint}
-                    disabled={isBusy}
-                    onChange={event => {
-                      onStartPointChange(event.target.value)
-                    }}
-                  >
-                    <option value="HEAD">HEAD</option>
-                    {currentBranch ? <option value={currentBranch}>{currentBranch}</option> : null}
-                    {branches
-                      .filter(branch => branch !== currentBranch)
-                      .map(branch => (
+            <div className="workspace-space-worktree__content-block">
+              {branchMode === 'new' ? (
+                <div
+                  className="workspace-space-worktree__create-grid"
+                  data-testid="space-worktree-create-grid"
+                >
+                  <div className="cove-window__field-row">
+                    <label htmlFor="space-worktree-start-point">Start point</label>
+                    <select
+                      id="space-worktree-start-point"
+                      data-testid="space-worktree-start-point"
+                      value={startPoint}
+                      disabled={isBusy}
+                      onChange={event => {
+                        onStartPointChange(event.target.value)
+                      }}
+                    >
+                      <option value="HEAD">HEAD</option>
+                      {currentBranch ? (
+                        <option value={currentBranch}>{currentBranch}</option>
+                      ) : null}
+                      {branches
+                        .filter(branch => branch !== currentBranch)
+                        .map(branch => (
+                          <option value={branch} key={branch}>
+                            {branch}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="cove-window__field-row workspace-space-worktree__create-grid-span-two">
+                    <label htmlFor="space-worktree-branch-name">Branch name</label>
+                    <input
+                      id="space-worktree-branch-name"
+                      data-testid="space-worktree-branch-name"
+                      value={newBranchName}
+                      disabled={isBusy}
+                      placeholder="e.g. space/infra-core"
+                      onChange={event => {
+                        onNewBranchNameChange(event.target.value)
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="workspace-space-worktree__create-grid workspace-space-worktree__create-grid--single"
+                  data-testid="space-worktree-create-grid"
+                >
+                  <div className="cove-window__field-row">
+                    <label htmlFor="space-worktree-existing-branch">Branch</label>
+                    <select
+                      id="space-worktree-existing-branch"
+                      data-testid="space-worktree-existing-branch"
+                      value={existingBranchName}
+                      disabled={isBusy}
+                      onChange={event => {
+                        onExistingBranchNameChange(event.target.value)
+                      }}
+                    >
+                      {branches.map(branch => (
                         <option value={branch} key={branch}>
                           {branch}
                         </option>
                       ))}
-                  </select>
+                    </select>
+                  </div>
                 </div>
+              )}
 
-                <div className="cove-window__field-row workspace-space-worktree__create-grid-span-two">
-                  <label htmlFor="space-worktree-branch-name">Branch name</label>
-                  <input
-                    id="space-worktree-branch-name"
-                    data-testid="space-worktree-branch-name"
-                    value={newBranchName}
+              <div className="workspace-space-worktree__inline-actions workspace-space-worktree__inline-actions--footer">
+                {AI_NAMING_FEATURES.worktreeNameSuggestion ? (
+                  <button
+                    type="button"
+                    className="cove-window__action cove-window__action--secondary"
+                    data-testid="space-worktree-suggest-ai"
                     disabled={isBusy}
-                    placeholder="e.g. space/infra-core"
-                    onChange={event => {
-                      onNewBranchNameChange(event.target.value)
-                    }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div
-                className="workspace-space-worktree__create-grid workspace-space-worktree__create-grid--two"
-                data-testid="space-worktree-create-grid"
-              >
-                <div className="cove-window__field-row">
-                  <label htmlFor="space-worktree-existing-branch">Branch</label>
-                  <select
-                    id="space-worktree-existing-branch"
-                    data-testid="space-worktree-existing-branch"
-                    value={existingBranchName}
-                    disabled={isBusy}
-                    onChange={event => {
-                      onExistingBranchNameChange(event.target.value)
-                    }}
+                    onClick={onSuggestNames}
                   >
-                    {branches.map(branch => (
-                      <option value={branch} key={branch}>
-                        {branch}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-
-            <div className="workspace-space-worktree__inline-actions">
-              {AI_NAMING_FEATURES.worktreeNameSuggestion ? (
+                    {isSuggesting ? 'Generating...' : 'Generate by AI'}
+                  </button>
+                ) : null}
                 <button
                   type="button"
-                  className="cove-window__action cove-window__action--secondary"
-                  data-testid="space-worktree-suggest-ai"
+                  className="cove-window__action cove-window__action--primary"
+                  data-testid="space-worktree-create"
                   disabled={isBusy}
-                  onClick={onSuggestNames}
+                  onClick={onCreate}
                 >
-                  {isSuggesting ? 'Generating...' : 'Generate by AI'}
+                  {isMutating ? 'Creating...' : 'Create & Bind'}
                 </button>
-              ) : null}
-              <button
-                type="button"
-                className="cove-window__action cove-window__action--primary"
-                data-testid="space-worktree-create"
-                disabled={isBusy}
-                onClick={onCreate}
-              >
-                {isMutating ? 'Creating...' : 'Create & Bind'}
-              </button>
+              </div>
             </div>
           </section>
         </div>
@@ -205,60 +200,49 @@ export function SpaceWorktreePanels({
 
       {viewMode === 'archive' ? (
         <div className="workspace-space-worktree__view" data-testid="space-worktree-archive-view">
-          <div className="workspace-space-worktree__view-header">
-            <h4>Archive Space</h4>
-            <button
-              type="button"
-              className="cove-window__action cove-window__action--ghost"
-              data-testid="space-worktree-close-inline"
-              disabled={isBusy}
-              onClick={onClose}
-            >
-              Close
-            </button>
-          </div>
-
-          <section className="workspace-space-worktree__surface workspace-space-worktree__surface--danger">
+          <section className="workspace-space-worktree__surface workspace-space-worktree__surface--minimal">
             {isSpaceOnWorkspaceRoot ? (
-              <p>
-                This will archive <strong>{space.name}</strong> and remove all nodes inside it.
-              </p>
+              <div className="workspace-space-worktree__message-block">
+                <p className="workspace-space-worktree__lead">
+                  Remove <strong>{space.name}</strong> and everything inside it.
+                </p>
+              </div>
             ) : (
-              <>
-                <p>
-                  This will rebind <strong>{space.name}</strong> to the workspace root and remove
-                  its current worktree.
+              <div className="workspace-space-worktree__message-block">
+                <p className="workspace-space-worktree__lead">
+                  Remove <strong>{space.name}</strong>, its worktree, and everything inside it.
                 </p>
 
-                <label className="workspace-space-worktree__checkbox">
-                  <input
-                    type="checkbox"
-                    data-testid="space-worktree-archive-delete-branch"
-                    checked={deleteBranchOnArchive}
-                    disabled={isBusy}
-                    onChange={event => {
-                      onDeleteBranchOnArchiveChange(event.target.checked)
-                    }}
-                  />
-                  Also delete the current branch
-                </label>
-
-                <label className="workspace-space-worktree__checkbox">
-                  <input
-                    type="checkbox"
-                    data-testid="space-worktree-archive-space"
-                    checked={archiveSpaceOnArchive}
-                    disabled={isBusy}
-                    onChange={event => {
-                      onArchiveSpaceOnArchiveChange(event.target.checked)
-                    }}
-                  />
-                  Also archive this Space and remove all nodes inside it
-                </label>
-              </>
+                <div className="workspace-space-worktree__option-list">
+                  <label className="cove-window__checkbox workspace-space-worktree__option-row">
+                    <input
+                      type="checkbox"
+                      data-testid="space-worktree-archive-delete-branch"
+                      checked={deleteBranchOnArchive}
+                      disabled={isBusy}
+                      onChange={event => {
+                        onDeleteBranchOnArchiveChange(event.target.checked)
+                      }}
+                    />
+                    <span className="workspace-space-worktree__option-copy workspace-space-worktree__option-copy--inline">
+                      <strong>Delete branch</strong>
+                      <span>Also remove the current git branch.</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
             )}
 
-            <div className="workspace-space-worktree__inline-actions">
+            <div className="workspace-space-worktree__inline-actions workspace-space-worktree__inline-actions--footer">
+              <button
+                type="button"
+                className="cove-window__action cove-window__action--ghost"
+                data-testid="space-worktree-archive-cancel"
+                disabled={isBusy}
+                onClick={onClose}
+              >
+                Cancel
+              </button>
               <button
                 type="button"
                 className="cove-window__action cove-window__action--danger"
@@ -266,7 +250,7 @@ export function SpaceWorktreePanels({
                 disabled={isBusy}
                 onClick={onArchive}
               >
-                {isMutating ? 'Archiving...' : 'Archive Space'}
+                {isMutating ? 'Confirming...' : 'Confirm'}
               </button>
             </div>
           </section>

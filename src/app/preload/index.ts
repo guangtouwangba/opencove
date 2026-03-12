@@ -7,6 +7,8 @@ import type {
   CreateGitWorktreeResult,
   DetachTerminalInput,
   EnsureDirectoryInput,
+  GetGitStatusSummaryInput,
+  GetGitStatusSummaryResult,
   KillTerminalInput,
   LaunchAgentInput,
   LaunchAgentResult,
@@ -83,6 +85,8 @@ const opencoveApi = {
       ipcRenderer.invoke(IPC_CHANNELS.worktreeListBranches, payload),
     listWorktrees: (payload: ListGitWorktreesInput): Promise<ListGitWorktreesResult> =>
       ipcRenderer.invoke(IPC_CHANNELS.worktreeListWorktrees, payload),
+    statusSummary: (payload: GetGitStatusSummaryInput): Promise<GetGitStatusSummaryResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.worktreeStatusSummary, payload),
     create: (payload: CreateGitWorktreeInput): Promise<CreateGitWorktreeResult> =>
       ipcRenderer.invoke(IPC_CHANNELS.worktreeCreate, payload),
     remove: (payload: RemoveGitWorktreeInput): Promise<RemoveGitWorktreeResult> =>

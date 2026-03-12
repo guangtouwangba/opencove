@@ -3,6 +3,8 @@ import { IPC_CHANNELS } from '../../../../shared/contracts/ipc'
 import type {
   CreateGitWorktreeInput,
   CreateGitWorktreeResult,
+  GetGitStatusSummaryInput,
+  GetGitStatusSummaryResult,
   ListGitBranchesInput,
   ListGitBranchesResult,
   ListGitWorktreesInput,
@@ -17,6 +19,7 @@ import type { IpcRegistrationDisposable } from '../../../../app/main/ipc/types'
 import type { ApprovedWorkspaceStore } from '../../../../contexts/workspace/infrastructure/approval/ApprovedWorkspaceStore'
 import {
   createGitWorktree,
+  getGitStatusSummary,
   listGitBranches,
   listGitWorktrees,
   removeGitWorktree,
@@ -25,6 +28,7 @@ import {
 import { suggestWorktreeNames } from '../../infrastructure/git/WorktreeNameSuggester'
 import {
   normalizeCreateGitWorktreePayload,
+  normalizeGetGitStatusSummaryPayload,
   normalizeListGitBranchesPayload,
   normalizeListGitWorktreesPayload,
   normalizeRemoveGitWorktreePayload,
@@ -58,6 +62,19 @@ export function registerWorktreeIpcHandlers(
       }
 
       return await listGitWorktrees({ repoPath: normalized.repoPath })
+    },
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.worktreeStatusSummary,
+    async (_event, payload: GetGitStatusSummaryInput): Promise<GetGitStatusSummaryResult> => {
+      const normalized = normalizeGetGitStatusSummaryPayload(payload)
+      const isApproved = await approvedWorkspaces.isPathApproved(normalized.repoPath)
+      if (!isApproved) {
+        throw new Error('worktree:list-status-summary repoPath is outside approved workspaces')
+      }
+
+      return await getGitStatusSummary({ repoPath: normalized.repoPath })
     },
   )
 
@@ -133,6 +150,7 @@ export function registerWorktreeIpcHandlers(
     dispose: () => {
       ipcMain.removeHandler(IPC_CHANNELS.worktreeListBranches)
       ipcMain.removeHandler(IPC_CHANNELS.worktreeListWorktrees)
+      ipcMain.removeHandler(IPC_CHANNELS.worktreeStatusSummary)
       ipcMain.removeHandler(IPC_CHANNELS.worktreeCreate)
       ipcMain.removeHandler(IPC_CHANNELS.worktreeRemove)
       ipcMain.removeHandler(IPC_CHANNELS.worktreeRenameBranch)

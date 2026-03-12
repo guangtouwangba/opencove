@@ -8,6 +8,7 @@ import {
 } from './GitWorktreeService.shared'
 import { mkdir, readdir, stat } from 'node:fs/promises'
 import { isAbsolute, resolve } from 'node:path'
+export { getGitStatusSummary } from './GitWorktreeStatusSummary'
 
 export interface GitWorktreeEntry {
   path: string

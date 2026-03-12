@@ -1,0 +1,28 @@
+.workspace-space-worktree-guard.cove-window {
+  width: min(520px, calc(100vw - 48px));
+}
+
+.workspace-space-worktree-guard {
+  display: grid;
+  gap: 14px;
+}
+
+.workspace-space-worktree-guard__summary {
+  margin: 2px 0 0;
+  color: rgba(214, 225, 245, 0.88);
+  font-size: calc(12px * var(--cove-ui-font-scale));
+  line-height: 1.4;
+}
+
+.workspace-space-worktree-guard__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 760px) {
+  .workspace-space-worktree-guard__actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}
