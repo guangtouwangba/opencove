@@ -35,6 +35,15 @@ test.describe('Workspace Canvas - Note Focus', () => {
       const noteNode = window.locator('.note-node').first()
       await expect(noteNode).toBeVisible()
 
+      // Keep the interactive minimap overlay from stealing the note click in smaller/offscreen windows.
+      const minimapDock = window.locator('.workspace-canvas__minimap-dock')
+      await expect(minimapDock).toBeVisible()
+      await minimapDock.hover()
+      const minimapToggle = window.locator('[data-testid="workspace-minimap-toggle"]')
+      await expect(minimapToggle).toBeVisible()
+      await minimapToggle.click()
+      await expect(window.locator('.workspace-canvas__minimap')).toHaveCount(0)
+
       const textarea = noteNode.locator('[data-testid="note-node-textarea"]')
       await expect(textarea).toBeVisible()
       await textarea.click({ position: { x: 48, y: 48 } })
