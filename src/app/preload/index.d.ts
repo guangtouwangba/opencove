@@ -5,6 +5,8 @@ import type {
   CreateGitWorktreeResult,
   DetachTerminalInput,
   EnsureDirectoryInput,
+  GetGitStatusSummaryInput,
+  GetGitStatusSummaryResult,
   KillTerminalInput,
   LaunchAgentInput,
   LaunchAgentResult,
@@ -67,6 +69,7 @@ export interface OpenCoveApi {
   worktree: {
     listBranches: (payload: ListGitBranchesInput) => Promise<ListGitBranchesResult>
     listWorktrees: (payload: ListGitWorktreesInput) => Promise<ListGitWorktreesResult>
+    statusSummary: (payload: GetGitStatusSummaryInput) => Promise<GetGitStatusSummaryResult>
     create: (payload: CreateGitWorktreeInput) => Promise<CreateGitWorktreeResult>
     remove: (payload: RemoveGitWorktreeInput) => Promise<RemoveGitWorktreeResult>
     renameBranch: (payload: RenameGitBranchInput) => Promise<void>

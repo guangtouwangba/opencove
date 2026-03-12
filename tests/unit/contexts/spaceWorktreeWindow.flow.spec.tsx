@@ -1,93 +1,23 @@
 import React from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import type { Node } from '@xyflow/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_AGENT_SETTINGS } from '../../../src/contexts/settings/domain/agentSettings'
 import { SpaceWorktreeWindow } from '../../../src/contexts/workspace/presentation/renderer/components/workspaceCanvas/windows/SpaceWorktreeWindow'
-import type {
-  TerminalNodeData,
-  WorkspaceSpaceState,
-} from '../../../src/contexts/workspace/presentation/renderer/types'
-
-function createNodes(): Node<TerminalNodeData>[] {
-  return []
-}
-
-function createSpaces(directoryPath = '/repo/.opencove/worktrees/space-1'): WorkspaceSpaceState[] {
-  return [
-    {
-      id: 'space-1',
-      name: 'Space 1',
-      directoryPath,
-      nodeIds: [],
-      rect: null,
-    },
-  ]
-}
-
-function installWorktreeApi(overrides?: Record<string, unknown>): {
-  create: ReturnType<typeof vi.fn>
-  remove: ReturnType<typeof vi.fn>
-} {
-  const create = vi.fn(async () => ({
-    worktree: {
-      path: '/repo/.opencove/worktrees/space-demo--1a2b3c4d',
-      head: null,
-      branch: 'space/demo',
-    },
-  }))
-  const remove = vi.fn(async () => ({
-    deletedBranchName: null,
-    branchDeleteError: null,
-  }))
-
-  const worktreeApi = {
-    listBranches: vi.fn(async () => ({
-      current: 'main',
-      branches: ['main', 'feature/demo'],
-    })),
-    listWorktrees: vi.fn(async () => ({
-      worktrees: [
-        { path: '/repo', head: 'abc', branch: 'main' },
-        {
-          path: '/repo/.opencove/worktrees/space-1',
-          head: 'def',
-          branch: 'feature/demo',
-        },
-      ],
-    })),
-    suggestNames: vi.fn(async () => ({
-      branchName: 'space/demo',
-      worktreeName: 'demo',
-      provider: 'codex',
-      effectiveModel: 'gpt-5.2-codex',
-    })),
-    create,
-    remove,
-    ...overrides,
-  }
-
-  Object.defineProperty(window, 'opencoveApi', {
-    configurable: true,
-    writable: true,
-    value: {
-      worktree: worktreeApi,
-    },
-  })
-
-  return {
-    create: worktreeApi.create as ReturnType<typeof vi.fn>,
-    remove: worktreeApi.remove as ReturnType<typeof vi.fn>,
-  }
-}
+import {
+  clearWorktreeApi,
+  createArchiveSummaryScenario,
+  createNodes,
+  createSpaces,
+  installWorktreeApi,
+} from './spaceWorktreeWindow.testUtils'
 
 describe('SpaceWorktreeWindow flow', () => {
   afterEach(() => {
-    delete (window as unknown as { opencoveApi?: unknown }).opencoveApi
+    clearWorktreeApi()
   })
 
   it('opens create and archive views directly without an intermediate home screen', async () => {
-    installWorktreeApi()
+    const { statusSummary } = installWorktreeApi()
 
     const { rerender } = render(
       <SpaceWorktreeWindow
@@ -106,6 +36,11 @@ describe('SpaceWorktreeWindow flow', () => {
     )
 
     expect(await screen.findByTestId('space-worktree-archive-view')).toBeVisible()
+    expect(screen.getByTestId('space-worktree-status')).toHaveTextContent('feature/demo')
+    expect(screen.getByTestId('space-worktree-status')).toHaveTextContent('3 changes')
+    expect(statusSummary).toHaveBeenCalledWith({
+      repoPath: '/repo/.opencove/worktrees/space-1',
+    })
     expect(screen.queryByTestId('space-worktree-home-view')).not.toBeInTheDocument()
     await waitFor(() => {
       expect(screen.getByTestId('space-worktree-archive-submit')).not.toBeDisabled()
@@ -128,6 +63,9 @@ describe('SpaceWorktreeWindow flow', () => {
     )
 
     expect(await screen.findByTestId('space-worktree-create-view')).toBeVisible()
+    expect(statusSummary).toHaveBeenLastCalledWith({
+      repoPath: '/repo',
+    })
     expect(screen.queryByTestId('space-worktree-home-view')).not.toBeInTheDocument()
     await waitFor(() => {
       expect(screen.getByTestId('space-worktree-create')).not.toBeDisabled()
@@ -173,45 +111,6 @@ describe('SpaceWorktreeWindow flow', () => {
         force: false,
         deleteBranch: true,
       })
-      expect(onUpdateSpaceDirectory).toHaveBeenCalledWith('space-1', '/repo', undefined)
-      expect(onClose).toHaveBeenCalledTimes(1)
-    })
-  })
-
-  it('can archive the space itself while removing its managed worktree', async () => {
-    const onClose = vi.fn()
-    const onUpdateSpaceDirectory = vi.fn()
-    const { remove } = installWorktreeApi()
-
-    render(
-      <SpaceWorktreeWindow
-        spaceId="space-1"
-        initialViewMode="archive"
-        spaces={createSpaces()}
-        nodes={createNodes()}
-        workspacePath="/repo"
-        worktreesRoot=".opencove/worktrees"
-        agentSettings={DEFAULT_AGENT_SETTINGS}
-        onClose={onClose}
-        onUpdateSpaceDirectory={onUpdateSpaceDirectory}
-        getBlockingNodes={() => ({ agentNodeIds: [], terminalNodeIds: [] })}
-        closeNodesById={async () => undefined}
-      />,
-    )
-
-    await waitFor(() => {
-      expect(screen.getByTestId('space-worktree-archive-submit')).not.toBeDisabled()
-    })
-    fireEvent.click(screen.getByTestId('space-worktree-archive-space'))
-    fireEvent.click(screen.getByTestId('space-worktree-archive-submit'))
-
-    await waitFor(() => {
-      expect(remove).toHaveBeenCalledWith({
-        repoPath: '/repo',
-        worktreePath: '/repo/.opencove/worktrees/space-1',
-        force: false,
-        deleteBranch: false,
-      })
       expect(onUpdateSpaceDirectory).toHaveBeenCalledWith('space-1', '/repo', {
         archiveSpace: true,
       })
@@ -245,7 +144,6 @@ describe('SpaceWorktreeWindow flow', () => {
     )
 
     expect(screen.queryByTestId('space-worktree-archive-delete-branch')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('space-worktree-archive-space')).not.toBeInTheDocument()
     await waitFor(() => {
       expect(screen.getByTestId('space-worktree-archive-submit')).not.toBeDisabled()
     })
@@ -314,13 +212,12 @@ describe('SpaceWorktreeWindow flow', () => {
     expect(closeNodesById).not.toHaveBeenCalled()
   })
 
-  it('forces close-all when archive is blocked by active windows', async () => {
+  it('auto-closes active windows before archiving a managed worktree space', async () => {
     const onClose = vi.fn()
     const onUpdateSpaceDirectory = vi.fn()
     const closeNodesById = vi.fn(async () => undefined)
     const getBlockingNodes = vi
       .fn()
-      .mockReturnValueOnce({ agentNodeIds: ['agent-1'], terminalNodeIds: ['terminal-1'] })
       .mockReturnValueOnce({ agentNodeIds: ['agent-1'], terminalNodeIds: ['terminal-1'] })
       .mockReturnValueOnce({ agentNodeIds: [], terminalNodeIds: [] })
     const { remove } = installWorktreeApi()
@@ -346,11 +243,6 @@ describe('SpaceWorktreeWindow flow', () => {
     })
     fireEvent.click(screen.getByTestId('space-worktree-archive-submit'))
 
-    expect(await screen.findByTestId('space-worktree-guard')).toBeVisible()
-    expect(screen.queryByTestId('space-worktree-guard-mark-mismatch')).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByTestId('space-worktree-guard-close-all'))
-
     await waitFor(() => {
       expect(closeNodesById).toHaveBeenCalledWith(['agent-1', 'terminal-1'])
       expect(remove).toHaveBeenCalledWith({
@@ -359,17 +251,26 @@ describe('SpaceWorktreeWindow flow', () => {
         force: false,
         deleteBranch: false,
       })
-      expect(onUpdateSpaceDirectory).toHaveBeenCalledWith('space-1', '/repo', undefined)
+      expect(onUpdateSpaceDirectory).toHaveBeenCalledWith('space-1', '/repo', {
+        archiveSpace: true,
+      })
       expect(onClose).toHaveBeenCalledTimes(1)
     })
   })
 
-  it('opens the guard immediately when archiving a root-backed space with active windows', async () => {
+  it('archives a root-backed space after closing active windows without opening a guard', async () => {
+    const onClose = vi.fn()
+    const onUpdateSpaceDirectory = vi.fn()
     installWorktreeApi({
       listWorktrees: vi.fn(async () => ({
         worktrees: [{ path: '/repo', head: 'abc', branch: 'main' }],
       })),
     })
+    const closeNodesById = vi.fn(async () => undefined)
+    const getBlockingNodes = vi
+      .fn()
+      .mockReturnValueOnce({ agentNodeIds: ['agent-1'], terminalNodeIds: [] })
+      .mockReturnValueOnce({ agentNodeIds: [], terminalNodeIds: [] })
 
     render(
       <SpaceWorktreeWindow
@@ -380,15 +281,52 @@ describe('SpaceWorktreeWindow flow', () => {
         workspacePath="/repo"
         worktreesRoot=".opencove/worktrees"
         agentSettings={DEFAULT_AGENT_SETTINGS}
+        onClose={onClose}
+        onUpdateSpaceDirectory={onUpdateSpaceDirectory}
+        getBlockingNodes={getBlockingNodes}
+        closeNodesById={closeNodesById}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('space-worktree-archive-submit')).not.toBeDisabled()
+    })
+    fireEvent.click(screen.getByTestId('space-worktree-archive-submit'))
+
+    await waitFor(() => {
+      expect(closeNodesById).toHaveBeenCalledWith(['agent-1'])
+      expect(onUpdateSpaceDirectory).toHaveBeenCalledWith('space-1', '/repo', {
+        archiveSpace: true,
+      })
+      expect(onClose).toHaveBeenCalledTimes(1)
+    })
+    expect(screen.queryByTestId('space-worktree-guard')).not.toBeInTheDocument()
+  })
+
+  it('shows archive title summary counts beside the heading', async () => {
+    installWorktreeApi()
+    const { spaces, nodes } = createArchiveSummaryScenario()
+
+    render(
+      <SpaceWorktreeWindow
+        spaceId="space-1"
+        initialViewMode="archive"
+        spaces={spaces}
+        nodes={nodes}
+        workspacePath="/repo"
+        worktreesRoot=".opencove/worktrees"
+        agentSettings={DEFAULT_AGENT_SETTINGS}
         onClose={() => undefined}
         onUpdateSpaceDirectory={() => undefined}
-        getBlockingNodes={() => ({ agentNodeIds: ['agent-1'], terminalNodeIds: [] })}
+        getBlockingNodes={() => ({ agentNodeIds: [], terminalNodeIds: [] })}
         closeNodesById={async () => undefined}
       />,
     )
 
-    expect(await screen.findByTestId('space-worktree-guard')).toBeVisible()
-    expect(screen.queryByTestId('space-worktree-guard-mark-mismatch')).not.toBeInTheDocument()
+    expect(await screen.findByText('Archive Worktree Space')).toBeVisible()
+    expect(screen.getByTestId('space-worktree-archive-summary')).toHaveTextContent(
+      '1 agent · 1 terminal · 1 task · 1 note',
+    )
   })
 
   it('shows an actionable error when archive API is unavailable', async () => {

@@ -15,12 +15,16 @@ export function SpaceWorktreeWindowDialog({
   isSuggesting,
   branches,
   currentBranch,
+  changedFileCount,
   branchMode,
   newBranchName,
   startPoint,
   existingBranchName,
   deleteBranchOnArchive,
-  archiveSpaceOnArchive,
+  archiveAgentCount,
+  archiveTerminalCount,
+  archiveTaskCount,
+  archiveNoteCount,
   error,
   guardIsBusy,
   onBackdropClose,
@@ -32,7 +36,6 @@ export function SpaceWorktreeWindowDialog({
   onSuggestNames,
   onCreate,
   onDeleteBranchOnArchiveChange,
-  onArchiveSpaceOnArchiveChange,
   onArchive,
 }: {
   space: WorkspaceSpaceState
@@ -44,12 +47,16 @@ export function SpaceWorktreeWindowDialog({
   isSuggesting: boolean
   branches: string[]
   currentBranch: string | null
+  changedFileCount: number
   branchMode: BranchMode
   newBranchName: string
   startPoint: string
   existingBranchName: string
   deleteBranchOnArchive: boolean
-  archiveSpaceOnArchive: boolean
+  archiveAgentCount: number
+  archiveTerminalCount: number
+  archiveTaskCount: number
+  archiveNoteCount: number
   error: string | null
   guardIsBusy: boolean
   onBackdropClose: () => void
@@ -61,7 +68,6 @@ export function SpaceWorktreeWindowDialog({
   onSuggestNames: () => void
   onCreate: () => void
   onDeleteBranchOnArchiveChange: (checked: boolean) => void
-  onArchiveSpaceOnArchiveChange: (checked: boolean) => void
   onArchive: () => void
 }): React.JSX.Element {
   const statusLabel = currentWorktree?.branch?.trim()
@@ -71,10 +77,32 @@ export function SpaceWorktreeWindowDialog({
       : currentWorktree?.head?.trim()
         ? currentWorktree.head.slice(0, 7)
         : 'Detached HEAD'
+  const headerTitle =
+    viewMode === 'archive'
+      ? isSpaceOnWorkspaceRoot
+        ? 'Archive Space'
+        : 'Archive Worktree Space'
+      : space.name
+  const archiveSummary = [
+    archiveAgentCount > 0
+      ? `${archiveAgentCount} agent${archiveAgentCount === 1 ? '' : 's'}`
+      : null,
+    archiveTerminalCount > 0
+      ? `${archiveTerminalCount} terminal${archiveTerminalCount === 1 ? '' : 's'}`
+      : null,
+    archiveTaskCount > 0 ? `${archiveTaskCount} task${archiveTaskCount === 1 ? '' : 's'}` : null,
+    archiveNoteCount > 0 ? `${archiveNoteCount} note${archiveNoteCount === 1 ? '' : 's'}` : null,
+  ]
+    .filter(part => part !== null)
+    .join(' · ')
 
   return (
     <div
-      className="cove-window-backdrop workspace-space-worktree-backdrop"
+      className={
+        viewMode === 'archive'
+          ? 'cove-window-backdrop workspace-space-worktree-backdrop workspace-space-worktree-backdrop--archive'
+          : 'cove-window-backdrop workspace-space-worktree-backdrop'
+      }
       onClick={() => {
         if (isBusy || guardIsBusy) {
           return
@@ -84,7 +112,11 @@ export function SpaceWorktreeWindowDialog({
       }}
     >
       <section
-        className="cove-window workspace-space-worktree"
+        className={
+          viewMode === 'archive'
+            ? 'cove-window workspace-space-worktree workspace-space-worktree--archive'
+            : 'cove-window workspace-space-worktree'
+        }
         data-testid="space-worktree-window"
         onClick={event => {
           event.stopPropagation()
@@ -92,13 +124,33 @@ export function SpaceWorktreeWindowDialog({
       >
         <header className="workspace-space-worktree__header">
           <div className="workspace-space-worktree__header-main">
-            <h3>{space.name}</h3>
+            <div className="workspace-space-worktree__title-group">
+              <div className="workspace-space-worktree__title-line">
+                <h3>{headerTitle}</h3>
+                {viewMode === 'archive' && archiveSummary.length > 0 ? (
+                  <p
+                    className="workspace-space-worktree__header-summary"
+                    data-testid="space-worktree-archive-summary"
+                  >
+                    {archiveSummary}
+                  </p>
+                ) : null}
+              </div>
+            </div>
             <div
               className="workspace-space-worktree__status-line"
               data-testid="space-worktree-status"
             >
               <GitBranch size={14} aria-hidden="true" />
               <span>{statusLabel}</span>
+              <span className="workspace-space-worktree__status-divider" aria-hidden="true">
+                ·
+              </span>
+              <span className="workspace-space-worktree__status-count">
+                {changedFileCount === 0
+                  ? 'clean'
+                  : `${changedFileCount} change${changedFileCount === 1 ? '' : 's'}`}
+              </span>
             </div>
             {viewMode === 'create' ? (
               <button
@@ -129,7 +181,6 @@ export function SpaceWorktreeWindowDialog({
           startPoint={startPoint}
           existingBranchName={existingBranchName}
           deleteBranchOnArchive={deleteBranchOnArchive}
-          archiveSpaceOnArchive={archiveSpaceOnArchive}
           onClose={onClose}
           onBranchModeChange={onBranchModeChange}
           onNewBranchNameChange={onNewBranchNameChange}
@@ -138,7 +189,6 @@ export function SpaceWorktreeWindowDialog({
           onSuggestNames={onSuggestNames}
           onCreate={onCreate}
           onDeleteBranchOnArchiveChange={onDeleteBranchOnArchiveChange}
-          onArchiveSpaceOnArchiveChange={onArchiveSpaceOnArchiveChange}
           onArchive={onArchive}
         />
 

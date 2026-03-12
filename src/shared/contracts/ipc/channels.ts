@@ -12,6 +12,7 @@ export const IPC_CHANNELS = {
   persistenceWriteNodeScrollback: 'persistence:write-node-scrollback',
   worktreeListBranches: 'worktree:list-branches',
   worktreeListWorktrees: 'worktree:list-worktrees',
+  worktreeStatusSummary: 'worktree:list-status-summary',
   worktreeCreate: 'worktree:create',
   worktreeRemove: 'worktree:remove',
   worktreeRenameBranch: 'worktree:rename-branch',

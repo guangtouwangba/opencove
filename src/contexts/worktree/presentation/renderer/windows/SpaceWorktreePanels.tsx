@@ -16,7 +16,6 @@ export function SpaceWorktreePanels({
   startPoint,
   existingBranchName,
   deleteBranchOnArchive,
-  archiveSpaceOnArchive,
   onClose,
   onBranchModeChange,
   onNewBranchNameChange,
@@ -25,7 +24,6 @@ export function SpaceWorktreePanels({
   onSuggestNames,
   onCreate,
   onDeleteBranchOnArchiveChange,
-  onArchiveSpaceOnArchiveChange,
   onArchive,
 }: {
   space: WorkspaceSpaceState
@@ -41,7 +39,6 @@ export function SpaceWorktreePanels({
   startPoint: string
   existingBranchName: string
   deleteBranchOnArchive: boolean
-  archiveSpaceOnArchive: boolean
   onClose: () => void
   onBranchModeChange: (mode: BranchMode) => void
   onNewBranchNameChange: (value: string) => void
@@ -50,7 +47,6 @@ export function SpaceWorktreePanels({
   onSuggestNames: () => void
   onCreate: () => void
   onDeleteBranchOnArchiveChange: (checked: boolean) => void
-  onArchiveSpaceOnArchiveChange: (checked: boolean) => void
   onArchive: () => void
 }): React.JSX.Element {
   return (
@@ -201,30 +197,17 @@ export function SpaceWorktreePanels({
 
       {viewMode === 'archive' ? (
         <div className="workspace-space-worktree__view" data-testid="space-worktree-archive-view">
-          <div className="workspace-space-worktree__view-header">
-            <h4>Archive Space</h4>
-          </div>
-
           <section className="workspace-space-worktree__surface workspace-space-worktree__surface--minimal">
             {isSpaceOnWorkspaceRoot ? (
               <div className="workspace-space-worktree__message-block">
                 <p className="workspace-space-worktree__lead">
-                  Archive <strong>{space.name}</strong> and remove all nodes inside it.
-                </p>
-                <p className="workspace-space-worktree__supporting-text">
-                  This space is already on the workspace root, so only the space and its contents
-                  will be removed.
+                  Remove <strong>{space.name}</strong> and everything inside it.
                 </p>
               </div>
             ) : (
               <div className="workspace-space-worktree__message-block">
                 <p className="workspace-space-worktree__lead">
-                  Rebind <strong>{space.name}</strong> to the workspace root and remove its current
-                  worktree.
-                </p>
-                <p className="workspace-space-worktree__supporting-text">
-                  Choose whether this flow should also delete the branch or archive the space
-                  itself.
+                  Remove <strong>{space.name}</strong>, its worktree, and everything inside it.
                 </p>
 
                 <div className="workspace-space-worktree__option-list">
@@ -238,25 +221,9 @@ export function SpaceWorktreePanels({
                         onDeleteBranchOnArchiveChange(event.target.checked)
                       }}
                     />
-                    <span className="workspace-space-worktree__option-copy">
-                      <strong>Delete current branch</strong>
-                      <span>Remove the git branch after the worktree is detached.</span>
-                    </span>
-                  </label>
-
-                  <label className="cove-window__checkbox workspace-space-worktree__option-row">
-                    <input
-                      type="checkbox"
-                      data-testid="space-worktree-archive-space"
-                      checked={archiveSpaceOnArchive}
-                      disabled={isBusy}
-                      onChange={event => {
-                        onArchiveSpaceOnArchiveChange(event.target.checked)
-                      }}
-                    />
-                    <span className="workspace-space-worktree__option-copy">
-                      <strong>Archive this space</strong>
-                      <span>Remove the space and every node currently inside it.</span>
+                    <span className="workspace-space-worktree__option-copy workspace-space-worktree__option-copy--inline">
+                      <strong>Delete branch</strong>
+                      <span>Also remove the current git branch.</span>
                     </span>
                   </label>
                 </div>
@@ -271,7 +238,7 @@ export function SpaceWorktreePanels({
                 disabled={isBusy}
                 onClick={onClose}
               >
-                Keep Current Setup
+                Cancel
               </button>
               <button
                 type="button"
@@ -280,7 +247,7 @@ export function SpaceWorktreePanels({
                 disabled={isBusy}
                 onClick={onArchive}
               >
-                {isMutating ? 'Archiving...' : 'Archive Space'}
+                {isMutating ? 'Confirming...' : 'Confirm'}
               </button>
             </div>
           </section>
