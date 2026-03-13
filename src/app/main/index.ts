@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { hydrateCliPathForPackagedApp } from '../../platform/os/CliEnvironment'
 import { registerIpcHandlers } from './ipc/registerIpcHandlers'
+import { setRuntimeIconTestState } from './iconTestHarness'
 import { resolveRuntimeIconPath } from './runtimeIcon'
 
 let ipcDisposable: ReturnType<typeof registerIpcHandlers> | null = null
@@ -216,6 +217,9 @@ function createWindow(): void {
   const placeWindowOffscreen = e2eWindowMode === 'offscreen'
   const disableRendererSandboxForTests = isTestEnv
   const runtimeIconPath = resolveRuntimeIconPath()
+  if (isTestEnv) {
+    setRuntimeIconTestState(runtimeIconPath)
+  }
   const initialWidth = isTestEnv ? 1440 : 1200
   const initialHeight = isTestEnv ? 900 : 800
 
