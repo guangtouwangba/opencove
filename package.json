@@ -32,6 +32,9 @@
     "productName": "OpenCove",
     "executableName": "OpenCove",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "win": {
+      "icon": "build/icon.ico"
+    },
     "mac": {
       "category": "public.app-category.developer-tools"
     }
