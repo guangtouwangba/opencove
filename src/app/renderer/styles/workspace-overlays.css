@@ -37,6 +37,20 @@
     color 0.15s ease;
 }
 
+.workspace-context-menu button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.workspace-context-menu button:disabled:hover {
+  background: transparent;
+}
+
+.workspace-context-menu button:disabled:hover .workspace-context-menu__icon {
+  opacity: 0.35;
+  transform: none;
+}
+
 .workspace-context-menu button:hover {
   background: rgba(255, 255, 255, 0.08);
 }

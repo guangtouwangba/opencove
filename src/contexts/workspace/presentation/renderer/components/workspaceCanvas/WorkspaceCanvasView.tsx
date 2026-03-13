@@ -32,6 +32,7 @@ import { WorkspaceSelectionDraftOverlay } from './view/WorkspaceSelectionDraftOv
 import { WorkspaceSpaceActionMenu } from './view/WorkspaceSpaceActionMenu'
 import { WorkspaceSpaceRegionsOverlay } from './view/WorkspaceSpaceRegionsOverlay'
 import { WorkspaceSpaceSwitcher } from './view/WorkspaceSpaceSwitcher'
+import { useWorkspaceCanvasGlobalDismissals } from './hooks/useGlobalDismissals'
 import { NodeDeleteConfirmationWindow } from './windows/NodeDeleteConfirmationWindow'
 import { TaskCreatorWindow } from './windows/TaskCreatorWindow'
 import { TaskEditorWindow } from './windows/TaskEditorWindow'
@@ -110,6 +111,9 @@ interface WorkspaceCanvasViewProps {
   openAgentLauncher: () => void
   createSpaceFromSelectedNodes: () => void
   clearNodeSelection: () => void
+  canConvertSelectedNoteToTask: boolean
+  isConvertSelectedNoteToTaskDisabled: boolean
+  convertSelectedNoteToTask: () => void
 
   taskCreator: TaskCreatorState | null
   taskTitleProviderLabel: string
@@ -220,6 +224,9 @@ export function WorkspaceCanvasView({
   openAgentLauncher,
   createSpaceFromSelectedNodes,
   clearNodeSelection,
+  canConvertSelectedNoteToTask,
+  isConvertSelectedNoteToTaskDisabled,
+  convertSelectedNoteToTask,
   taskCreator,
   taskTitleProviderLabel,
   taskTitleModelLabel,
@@ -253,6 +260,15 @@ export function WorkspaceCanvasView({
   getSpaceBlockingNodes,
   closeNodesById,
 }: WorkspaceCanvasViewProps): React.JSX.Element {
+  useWorkspaceCanvasGlobalDismissals({
+    contextMenu,
+    spaceActionMenu,
+    closeContextMenu,
+    canvasRef,
+    selectedNodeCount,
+    clearNodeSelection,
+  })
+
   const activeMenuSpace = React.useMemo(
     () =>
       spaceActionMenu
@@ -286,7 +302,18 @@ export function WorkspaceCanvasView({
       data-selected-node-count={selectedNodeCount}
       onClick={onCanvasClick}
       onDoubleClickCapture={handleCanvasDoubleClickCapture}
-      onPointerDownCapture={handleCanvasPointerDownCapture}
+      onPointerDownCapture={event => {
+        if (
+          event.button === 0 &&
+          (contextMenu !== null || spaceActionMenu !== null) &&
+          event.target instanceof Element &&
+          !event.target.closest('.workspace-context-menu')
+        ) {
+          closeContextMenu()
+        }
+
+        handleCanvasPointerDownCapture(event)
+      }}
       onPointerMoveCapture={handleCanvasPointerMoveCapture}
       onPointerUpCapture={handleCanvasPointerUpCapture}
       onWheelCapture={event => {
@@ -378,6 +405,9 @@ export function WorkspaceCanvasView({
         openAgentLauncher={openAgentLauncher}
         createSpaceFromSelectedNodes={createSpaceFromSelectedNodes}
         clearNodeSelection={clearNodeSelection}
+        canConvertSelectedNoteToTask={canConvertSelectedNoteToTask}
+        isConvertSelectedNoteToTaskDisabled={isConvertSelectedNoteToTaskDisabled}
+        convertSelectedNoteToTask={convertSelectedNoteToTask}
       />
 
       <WorkspaceSpaceActionMenu

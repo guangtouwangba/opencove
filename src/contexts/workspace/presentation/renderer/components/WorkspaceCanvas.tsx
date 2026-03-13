@@ -342,6 +342,21 @@ function WorkspaceCanvasInner({
     createNoteNode,
   })
 
+  const {
+    canConvertSelectedNoteToTask,
+    isConvertSelectedNoteToTaskDisabled,
+    convertSelectedNoteToTask,
+  } = workspaceCanvasHooks.useWorkspaceCanvasNoteToTaskConversion({
+    selectedNodeIds,
+    selectedNodeIdsRef,
+    flowNodes,
+    nodesRef,
+    setNodes,
+    onRequestPersistFlush,
+    onShowMessage,
+    setContextMenu,
+  })
+
   useLayoutEffect(() => {
     actionRefs.clearNodeSelectionRef.current = clearNodeSelection
   }, [actionRefs.clearNodeSelectionRef, clearNodeSelection])
@@ -364,24 +379,7 @@ function WorkspaceCanvasInner({
     handleViewportMoveEnd,
     minimapNodeColor,
     taskAgentEdges,
-    spaceUi: {
-      spaceActionMenu,
-      spaceWorktreeDialog,
-      availablePathOpeners,
-      handleCanvasClick,
-      closeContextMenu,
-      handlePaneClickWithSpaceMenuClose,
-      handlePaneContextMenuWithSpaceMenuClose,
-      handleNodeContextMenuWithSpaceMenuClose,
-      handleSelectionContextMenuWithSpaceMenuClose,
-      openSpaceActionMenu,
-      closeSpaceActionMenu,
-      copySpacePath,
-      openSpacePath,
-      openSpaceCreateWorktree,
-      openSpaceArchive,
-      closeSpaceWorktree,
-    },
+    spaceUi,
   } = workspaceCanvasHooks.useWorkspaceCanvasViewModel({
     agentSettings,
     viewportRef,
@@ -402,7 +400,7 @@ function WorkspaceCanvasInner({
     <WorkspaceCanvasView
       canvasRef={canvasRef}
       resolvedCanvasInputMode={resolvedCanvasInputMode}
-      onCanvasClick={handleCanvasClick}
+      onCanvasClick={spaceUi.handleCanvasClick}
       handleCanvasPointerDownCapture={handleCanvasPointerDownCapture}
       handleCanvasPointerMoveCapture={handleCanvasPointerMoveCapture}
       handleCanvasPointerUpCapture={handleCanvasPointerUpCapture}
@@ -412,11 +410,11 @@ function WorkspaceCanvasInner({
       edges={taskAgentEdges}
       nodeTypes={nodeTypes}
       onNodesChange={applyChanges}
-      onPaneClick={handlePaneClickWithSpaceMenuClose}
-      onPaneContextMenu={handlePaneContextMenuWithSpaceMenuClose}
+      onPaneClick={spaceUi.handlePaneClickWithSpaceMenuClose}
+      onPaneContextMenu={spaceUi.handlePaneContextMenuWithSpaceMenuClose}
       onNodeClick={handleNodeClick}
-      onNodeContextMenu={handleNodeContextMenuWithSpaceMenuClose}
-      onSelectionContextMenu={handleSelectionContextMenuWithSpaceMenuClose}
+      onNodeContextMenu={spaceUi.handleNodeContextMenuWithSpaceMenuClose}
+      onSelectionContextMenu={spaceUi.handleSelectionContextMenuWithSpaceMenuClose}
       onSelectionChange={handleSelectionChange}
       onNodeDragStart={handleNodeDragStart}
       onSelectionDragStart={handleSelectionDragStart}
@@ -448,12 +446,15 @@ function WorkspaceCanvasInner({
       focusSpaceInViewport={focusSpaceInViewport}
       focusAllInViewport={focusAllInViewport}
       contextMenu={contextMenu}
-      closeContextMenu={closeContextMenu}
+      closeContextMenu={spaceUi.closeContextMenu}
       createTerminalNode={createTerminalNode}
       openTaskCreator={openTaskCreator}
       openAgentLauncher={openAgentLauncher}
       createSpaceFromSelectedNodes={createSpaceFromSelectedNodes}
       clearNodeSelection={clearNodeSelection}
+      canConvertSelectedNoteToTask={canConvertSelectedNoteToTask}
+      isConvertSelectedNoteToTaskDisabled={isConvertSelectedNoteToTaskDisabled}
+      convertSelectedNoteToTask={convertSelectedNoteToTask}
       taskCreator={taskCreator}
       taskTitleProviderLabel={taskTitleProviderLabel}
       taskTitleModelLabel={taskTitleModelLabel}
@@ -472,17 +473,17 @@ function WorkspaceCanvasInner({
       confirmNodeDelete={confirmNodeDelete}
       agentSettings={agentSettings}
       workspacePath={workspacePath}
-      spaceActionMenu={spaceActionMenu}
-      availablePathOpeners={availablePathOpeners}
-      openSpaceActionMenu={openSpaceActionMenu}
-      closeSpaceActionMenu={closeSpaceActionMenu}
-      copySpacePath={copySpacePath}
-      openSpacePath={openSpacePath}
-      spaceWorktreeDialog={spaceWorktreeDialog}
+      spaceActionMenu={spaceUi.spaceActionMenu}
+      availablePathOpeners={spaceUi.availablePathOpeners}
+      openSpaceActionMenu={spaceUi.openSpaceActionMenu}
+      closeSpaceActionMenu={spaceUi.closeSpaceActionMenu}
+      copySpacePath={spaceUi.copySpacePath}
+      openSpacePath={spaceUi.openSpacePath}
+      spaceWorktreeDialog={spaceUi.spaceWorktreeDialog}
       worktreesRoot={worktreesRoot}
-      openSpaceCreateWorktree={openSpaceCreateWorktree}
-      openSpaceArchive={openSpaceArchive}
-      closeSpaceWorktree={closeSpaceWorktree}
+      openSpaceCreateWorktree={spaceUi.openSpaceCreateWorktree}
+      openSpaceArchive={spaceUi.openSpaceArchive}
+      closeSpaceWorktree={spaceUi.closeSpaceWorktree}
       updateSpaceDirectory={updateSpaceDirectory}
       getSpaceBlockingNodes={getSpaceBlockingNodes}
       closeNodesById={closeNodesById}

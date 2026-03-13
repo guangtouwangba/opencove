@@ -1,5 +1,5 @@
 import React from 'react'
-import { Group, ListTodo, Play, Terminal, X } from 'lucide-react'
+import { ArrowRight, Group, ListTodo, Play, Terminal, X } from 'lucide-react'
 import type { ContextMenuState } from '../types'
 
 interface WorkspaceContextMenuProps {
@@ -10,6 +10,9 @@ interface WorkspaceContextMenuProps {
   openAgentLauncher: () => void
   createSpaceFromSelectedNodes: () => void
   clearNodeSelection: () => void
+  canConvertSelectedNoteToTask: boolean
+  isConvertSelectedNoteToTaskDisabled: boolean
+  convertSelectedNoteToTask: () => void
 }
 
 export function WorkspaceContextMenu({
@@ -20,6 +23,9 @@ export function WorkspaceContextMenu({
   openAgentLauncher,
   createSpaceFromSelectedNodes,
   clearNodeSelection,
+  canConvertSelectedNoteToTask,
+  isConvertSelectedNoteToTaskDisabled,
+  convertSelectedNoteToTask,
 }: WorkspaceContextMenuProps): React.JSX.Element | null {
   if (!contextMenu) {
     return null
@@ -78,6 +84,19 @@ export function WorkspaceContextMenu({
             <Group className="workspace-context-menu__icon" aria-hidden="true" />
             <span className="workspace-context-menu__label">Create Space with Selected</span>
           </button>
+          {canConvertSelectedNoteToTask ? (
+            <button
+              type="button"
+              data-testid="workspace-selection-convert-note-to-task"
+              disabled={isConvertSelectedNoteToTaskDisabled}
+              onClick={() => {
+                convertSelectedNoteToTask()
+              }}
+            >
+              <ArrowRight className="workspace-context-menu__icon" aria-hidden="true" />
+              <span className="workspace-context-menu__label">Convert to Task</span>
+            </button>
+          ) : null}
           <button
             type="button"
             data-testid="workspace-selection-clear"
