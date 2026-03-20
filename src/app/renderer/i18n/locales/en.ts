@@ -127,6 +127,7 @@ export const en = {
       canvas: 'Canvas',
       tasks: 'Tasks',
       models: 'Models',
+      integrations: 'Integrations',
       projects: 'Projects',
       sectionsLabel: 'Settings sections',
     },
@@ -192,6 +193,12 @@ export const en = {
       addModelPlaceholder: 'Add model...',
       modelError: 'Error: {{message}}',
     },
+    integrations: {
+      title: 'Integrations',
+      githubPullRequestsLabel: 'GitHub PR Links',
+      githubPullRequestsHelp:
+        'Show pull request links on the canvas and open them on GitHub (requires `gh`).',
+    },
     workspace: {
       title: 'Workspace Worktree',
       selectProjectFirst: 'Select a project first',
@@ -203,6 +210,11 @@ export const en = {
       worktreeRootPlaceholder: '.opencove/worktrees',
       resolvedPathLabel: 'Resolved Path',
       resolvedPathHelp: 'Where new worktrees will be created.',
+      pullRequestBaseBranchesLabel: 'Pull Request Base Branches',
+      pullRequestBaseBranchesHelp:
+        'Suggestions shown when creating PRs on the canvas. The repository default branch is always included.',
+      pullRequestBaseBranchesEmpty: 'No base branches configured.',
+      pullRequestBaseBranchesPlaceholder: 'e.g. develop',
     },
   },
   taskNode: {

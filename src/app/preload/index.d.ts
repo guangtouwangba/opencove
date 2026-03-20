@@ -5,6 +5,8 @@ import type {
   CreateGitWorktreeResult,
   DetachTerminalInput,
   EnsureDirectoryInput,
+  GetGitDefaultBranchInput,
+  GetGitDefaultBranchResult,
   GetGitStatusSummaryInput,
   GetGitStatusSummaryResult,
   KillTerminalInput,
@@ -22,6 +24,8 @@ import type {
   ReadAgentLastMessageResult,
   ResolveAgentResumeSessionInput,
   ResolveAgentResumeSessionResult,
+  ResolveGitHubPullRequestsInput,
+  ResolveGitHubPullRequestsResult,
   ListWorkspacePathOpenersResult,
   OpenWorkspacePathInput,
   PersistWriteResult,
@@ -80,10 +84,18 @@ export interface OpenCoveApi {
     listBranches: (payload: ListGitBranchesInput) => Promise<ListGitBranchesResult>
     listWorktrees: (payload: ListGitWorktreesInput) => Promise<ListGitWorktreesResult>
     statusSummary: (payload: GetGitStatusSummaryInput) => Promise<GetGitStatusSummaryResult>
+    getDefaultBranch: (payload: GetGitDefaultBranchInput) => Promise<GetGitDefaultBranchResult>
     create: (payload: CreateGitWorktreeInput) => Promise<CreateGitWorktreeResult>
     remove: (payload: RemoveGitWorktreeInput) => Promise<RemoveGitWorktreeResult>
     renameBranch: (payload: RenameGitBranchInput) => Promise<void>
     suggestNames: (payload: SuggestWorktreeNamesInput) => Promise<SuggestWorktreeNamesResult>
+  }
+  integration: {
+    github: {
+      resolvePullRequests: (
+        payload: ResolveGitHubPullRequestsInput,
+      ) => Promise<ResolveGitHubPullRequestsResult>
+    }
   }
   pty: {
     listProfiles?: () => Promise<ListTerminalProfilesResult>

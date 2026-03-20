@@ -129,6 +129,7 @@ export const zhCN = {
       canvas: '画布',
       tasks: '任务',
       models: '模型',
+      integrations: '集成',
       projects: '项目',
       sectionsLabel: '设置分区',
     },
@@ -194,6 +195,11 @@ export const zhCN = {
       addModelPlaceholder: '添加模型...',
       modelError: '错误：{{message}}',
     },
+    integrations: {
+      title: '集成',
+      githubPullRequestsLabel: 'GitHub PR 链接',
+      githubPullRequestsHelp: '在画布中显示 PR 链接，点击后在 GitHub 打开（需要 `gh`）。',
+    },
     workspace: {
       title: '工作区 Worktree',
       selectProjectFirst: '请先选择一个项目',
@@ -205,6 +211,10 @@ export const zhCN = {
       worktreeRootPlaceholder: '.opencove/worktrees',
       resolvedPathLabel: '解析后的路径',
       resolvedPathHelp: '新 worktree 将会创建在这里。',
+      pullRequestBaseBranchesLabel: 'PR 目标分支候选',
+      pullRequestBaseBranchesHelp: '用于画布创建 PR 时的目标分支建议。默认分支会自动出现。',
+      pullRequestBaseBranchesEmpty: '暂无候选分支。',
+      pullRequestBaseBranchesPlaceholder: '例如 develop',
     },
   },
   taskNode: {

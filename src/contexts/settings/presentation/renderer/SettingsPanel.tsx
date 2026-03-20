@@ -15,6 +15,7 @@ import {
 import { AgentSection } from './settingsPanel/AgentSection'
 import { CanvasSection } from './settingsPanel/CanvasSection'
 import { GeneralSection } from './settingsPanel/GeneralSection'
+import { IntegrationsSection } from './settingsPanel/IntegrationsSection'
 import { ModelOverrideSection } from './settingsPanel/ModelOverrideSection'
 import { TaskConfigurationSection } from './settingsPanel/TaskConfigurationSection'
 import { WorkspaceSection } from './settingsPanel/WorkspaceSection'
@@ -37,7 +38,7 @@ interface SettingsPanelProps {
   onClose: () => void
 }
 
-type CorePageId = 'general' | 'agent' | 'canvas' | 'task-configuration'
+type CorePageId = 'general' | 'agent' | 'canvas' | 'task-configuration' | 'integrations'
 type WorkspacePageId = `workspace:${string}`
 type SettingsPageId = CorePageId | WorkspacePageId
 
@@ -107,6 +108,8 @@ export function SettingsPanel({
     onChange({ ...settings, uiFontSize: fontSize })
   const updateTaskTagOptions = (nextTags: string[]): void =>
     onChange({ ...settings, taskTagOptions: nextTags })
+  const updateGitHubPullRequestsEnabled = (enabled: boolean): void =>
+    onChange({ ...settings, githubPullRequestsEnabled: enabled })
 
   const removeTaskTagOption = (tag: string): void => {
     const nextTags = settings.taskTagOptions.filter(option => option !== tag)
@@ -268,6 +271,11 @@ export function SettingsPanel({
             label={t('settingsPanel.nav.tasks')}
             testId="settings-section-nav-task-configuration"
           />
+          <NavButton
+            id="integrations"
+            label={t('settingsPanel.nav.integrations')}
+            testId="settings-section-nav-integrations"
+          />
 
           <div className="settings-panel__nav-group-label">{t('settingsPanel.nav.projects')}</div>
           <div className="settings-panel__nav-group">
@@ -325,6 +333,13 @@ export function SettingsPanel({
                   onAddCustomModelOption={addCustomModelOption}
                 />
               </>
+            ) : null}
+
+            {activePageId === 'integrations' ? (
+              <IntegrationsSection
+                githubPullRequestsEnabled={settings.githubPullRequestsEnabled}
+                onChangeGitHubPullRequestsEnabled={updateGitHubPullRequestsEnabled}
+              />
             ) : null}
 
             {activePageId === 'canvas' ? (

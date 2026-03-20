@@ -10,15 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Settings: UI theme selector (system/light/dark) with system follow. (#40)
 - UI: App header with primary sidebar toggle + top-right settings (macOS uses unified title bar chrome).
 - UI: Command Center in header (search + project/space switcher) with Cmd/Ctrl+K and Cmd/Ctrl+P shortcuts.
+- In-canvas GitHub pull request chip for worktree-bound Spaces (opens on GitHub; requires `gh`).
+- Settings → Integrations tab with a GitHub PR links toggle (default on).
 
 ### 💅 Changed
-- Workspace pane context menu: “Run Agent” can expand to pick an installed agent CLI.
-- Settings: reorganized into per-tab pages; added an Agent tab for provider defaults, menu order, and model overrides.
-- Settings: panel typography (including model overrides) now follows the Interface Font Size setting. (#40)
-- UI: refined light theme palette across canvas, nodes, and settings; minimap becomes subtle when idle and clearer on hover. (#40)
+- Simplified GitHub PR integration to a link-only chip (removed in-canvas PR panel/actions/diff/checks UI for now).
 
 ### 🐞 Fixed
-- Light theme: fix white text in Settings > Custom Model overrides. (#40)
+- Prevented canvas zoom/pan when scrolling inside overlay windows.
 
 ---
 
