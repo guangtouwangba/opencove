@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - UI: Softened minimap node colors in light theme. (#47)
 - UI: Made modal dialogs opaque for clearer readability. (#48)
 - Spaces: dragging Terminal/Agent windows across directory-bound spaces now shows a compact confirmation, then moves with `DIR MISMATCH` labeling. (#51)
+- Spaces: warn before closing the last node in a space when it would become empty and auto-close, using the shared warning dialog shell. (#66)
 
 ### 🐞 Fixed
 - Spaces: New windows created from a crowded space now preserve existing window layout, expand the space only as needed, and keep the viewport centered on the final position. (#62)
