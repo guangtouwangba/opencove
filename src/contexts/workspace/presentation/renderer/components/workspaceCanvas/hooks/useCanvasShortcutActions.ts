@@ -41,9 +41,9 @@ export function useWorkspaceCanvasShortcutActions({
   agentSettings: Pick<
     AgentSettings,
     | 'defaultTerminalProfileId'
-    | 'defaultTerminalWindowScalePercent'
     | 'disableAppShortcutsWhenTerminalFocused'
     | 'keybindings'
+    | 'standardWindowSizeBucket'
   >
   workspacePath: string
   canvasRef: React.RefObject<HTMLDivElement | null>
@@ -77,6 +77,7 @@ export function useWorkspaceCanvasShortcutActions({
 
     createNoteNodeAtFlowPosition({
       anchor,
+      standardWindowSizeBucket: agentSettings.standardWindowSizeBucket,
       createNoteNode,
       spacesRef,
       nodesRef,
@@ -84,6 +85,7 @@ export function useWorkspaceCanvasShortcutActions({
       onSpacesChange,
     })
   }, [
+    agentSettings.standardWindowSizeBucket,
     cancelSpaceRename,
     canvasRef,
     createNoteNode,
@@ -112,7 +114,7 @@ export function useWorkspaceCanvasShortcutActions({
     await createTerminalNodeAtFlowPosition({
       anchor,
       defaultTerminalProfileId: agentSettings.defaultTerminalProfileId,
-      defaultTerminalWindowScalePercent: agentSettings.defaultTerminalWindowScalePercent,
+      standardWindowSizeBucket: agentSettings.standardWindowSizeBucket,
       workspacePath,
       spacesRef,
       nodesRef,
@@ -122,7 +124,7 @@ export function useWorkspaceCanvasShortcutActions({
     })
   }, [
     agentSettings.defaultTerminalProfileId,
-    agentSettings.defaultTerminalWindowScalePercent,
+    agentSettings.standardWindowSizeBucket,
     cancelSpaceRename,
     canvasRef,
     createNodeForSession,

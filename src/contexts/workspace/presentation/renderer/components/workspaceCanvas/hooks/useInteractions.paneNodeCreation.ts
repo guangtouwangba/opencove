@@ -1,5 +1,6 @@
 import type { MutableRefObject } from 'react'
 import type { Node } from '@xyflow/react'
+import type { StandardWindowSizeBucket } from '@contexts/settings/domain/agentSettings'
 import type { Point, TerminalNodeData, WorkspaceSpaceState } from '../../../types'
 import type { ContextMenuState, CreateNodeInput } from '../types'
 import { resolveDefaultNoteWindowSize, resolveDefaultTerminalWindowSize } from '../constants'
@@ -18,7 +19,7 @@ type SetNodes = (
 export async function createTerminalNodeAtFlowPosition({
   anchor,
   defaultTerminalProfileId,
-  defaultTerminalWindowScalePercent,
+  standardWindowSizeBucket,
   workspacePath,
   spacesRef,
   nodesRef,
@@ -28,7 +29,7 @@ export async function createTerminalNodeAtFlowPosition({
 }: {
   anchor: Point
   defaultTerminalProfileId: string | null
-  defaultTerminalWindowScalePercent: number
+  standardWindowSizeBucket: StandardWindowSizeBucket
   workspacePath: string
   spacesRef: MutableRefObject<WorkspaceSpaceState[]>
   nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
@@ -42,7 +43,7 @@ export async function createTerminalNodeAtFlowPosition({
   }
   const nodeAnchor = resolveNodePlacementAnchorFromViewportCenter(
     cursorAnchor,
-    resolveDefaultTerminalWindowSize(defaultTerminalWindowScalePercent),
+    resolveDefaultTerminalWindowSize(standardWindowSizeBucket),
   )
 
   const targetSpace = findContainingSpaceByAnchor(spacesRef.current, cursorAnchor)
@@ -89,6 +90,7 @@ export async function createTerminalNodeAtFlowPosition({
 
 export function createNoteNodeAtFlowPosition({
   anchor,
+  standardWindowSizeBucket,
   createNoteNode,
   spacesRef,
   nodesRef,
@@ -96,6 +98,7 @@ export function createNoteNodeAtFlowPosition({
   onSpacesChange,
 }: {
   anchor: Point
+  standardWindowSizeBucket: StandardWindowSizeBucket
   createNoteNode: (anchor: Point) => Node<TerminalNodeData> | null
   spacesRef: MutableRefObject<WorkspaceSpaceState[]>
   nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
@@ -108,7 +111,7 @@ export function createNoteNodeAtFlowPosition({
   }
   const nodeAnchor = resolveNodePlacementAnchorFromViewportCenter(
     cursorAnchor,
-    resolveDefaultNoteWindowSize(),
+    resolveDefaultNoteWindowSize(standardWindowSizeBucket),
   )
 
   createNoteNodeAtAnchor({
@@ -125,10 +128,10 @@ export function createNoteNodeAtFlowPosition({
 export async function createTerminalNodeFromPaneContextMenu({
   contextMenu,
   defaultTerminalProfileId,
-  defaultTerminalWindowScalePercent,
   workspacePath,
   spacesRef,
   nodesRef,
+  standardWindowSizeBucket,
   setNodes,
   onSpacesChange,
   createNodeForSession,
@@ -136,10 +139,10 @@ export async function createTerminalNodeFromPaneContextMenu({
 }: {
   contextMenu: ContextMenuState | null
   defaultTerminalProfileId: string | null
-  defaultTerminalWindowScalePercent: number
   workspacePath: string
   spacesRef: MutableRefObject<WorkspaceSpaceState[]>
   nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
+  standardWindowSizeBucket: StandardWindowSizeBucket
   setNodes: SetNodes
   onSpacesChange: (spaces: WorkspaceSpaceState[]) => void
   createNodeForSession: (input: CreateNodeInput) => Promise<Node<TerminalNodeData> | null>
@@ -156,7 +159,7 @@ export async function createTerminalNodeFromPaneContextMenu({
       y: contextMenu.flowY,
     },
     defaultTerminalProfileId,
-    defaultTerminalWindowScalePercent,
+    standardWindowSizeBucket,
     workspacePath,
     spacesRef,
     nodesRef,
@@ -169,6 +172,7 @@ export async function createTerminalNodeFromPaneContextMenu({
 export function createNoteNodeFromPaneContextMenu({
   contextMenu,
   createNoteNode,
+  standardWindowSizeBucket,
   spacesRef,
   nodesRef,
   setNodes,
@@ -177,6 +181,7 @@ export function createNoteNodeFromPaneContextMenu({
 }: {
   contextMenu: ContextMenuState | null
   createNoteNode: (anchor: Point) => Node<TerminalNodeData> | null
+  standardWindowSizeBucket: StandardWindowSizeBucket
   spacesRef: MutableRefObject<WorkspaceSpaceState[]>
   nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
   setNodes: SetNodes
@@ -193,6 +198,7 @@ export function createNoteNodeFromPaneContextMenu({
       x: contextMenu.flowX,
       y: contextMenu.flowY,
     },
+    standardWindowSizeBucket,
     createNoteNode,
     spacesRef,
     nodesRef,

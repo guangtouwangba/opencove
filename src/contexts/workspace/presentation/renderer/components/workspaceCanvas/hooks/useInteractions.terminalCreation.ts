@@ -1,5 +1,6 @@
 import { useCallback, type MutableRefObject } from 'react'
 import type { Node } from '@xyflow/react'
+import type { StandardWindowSizeBucket } from '@contexts/settings/domain/agentSettings'
 import type { TerminalNodeData, WorkspaceSpaceState } from '../../../types'
 import type { ContextMenuState, CreateNodeInput } from '../types'
 import { createTerminalNodeAtFlowPosition } from './useInteractions.paneNodeCreation'
@@ -12,22 +13,22 @@ type SetNodes = (
 export function useWorkspaceCanvasTerminalCreation({
   contextMenu,
   setContextMenu,
-  defaultTerminalWindowScalePercent,
   spacesRef,
   workspacePath,
   defaultTerminalProfileId,
   nodesRef,
+  standardWindowSizeBucket,
   createNodeForSession,
   setNodes,
   onSpacesChange,
 }: {
   contextMenu: ContextMenuState | null
   setContextMenu: (next: ContextMenuState | null) => void
-  defaultTerminalWindowScalePercent: number
   spacesRef: MutableRefObject<WorkspaceSpaceState[]>
   workspacePath: string
   defaultTerminalProfileId: string | null
   nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
+  standardWindowSizeBucket: StandardWindowSizeBucket
   createNodeForSession: (input: CreateNodeInput) => Promise<Node<TerminalNodeData> | null>
   setNodes: SetNodes
   onSpacesChange: (spaces: WorkspaceSpaceState[]) => void
@@ -44,7 +45,7 @@ export function useWorkspaceCanvasTerminalCreation({
         y: contextMenu.flowY,
       },
       defaultTerminalProfileId,
-      defaultTerminalWindowScalePercent,
+      standardWindowSizeBucket,
       workspacePath,
       spacesRef,
       nodesRef,
@@ -61,7 +62,7 @@ export function useWorkspaceCanvasTerminalCreation({
     setNodes,
     spacesRef,
     defaultTerminalProfileId,
-    defaultTerminalWindowScalePercent,
+    standardWindowSizeBucket,
     workspacePath,
   ])
 }

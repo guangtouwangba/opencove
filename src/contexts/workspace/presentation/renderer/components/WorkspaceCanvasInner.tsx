@@ -62,7 +62,7 @@ export function WorkspaceCanvasInner({
     onSpacesChange,
     onRequestPersistFlush,
     onShowMessage,
-    defaultTerminalWindowScalePercent: agentSettings.defaultTerminalWindowScalePercent,
+    standardWindowSizeBucket: agentSettings.standardWindowSizeBucket,
   })
   const { updateSpaceDirectory, getSpaceBlockingNodes, closeNodesById } =
     workspaceCanvasHooks.useWorkspaceCanvasSpaceDirectoryOps({
@@ -168,6 +168,7 @@ export function WorkspaceCanvasInner({
     contextMenu: canvasState.contextMenu,
     setContextMenu: canvasState.setContextMenu,
     createNodeForSession,
+    standardWindowSizeBucket: agentSettings.standardWindowSizeBucket,
   })
   const {
     taskTagOptions,
@@ -200,6 +201,7 @@ export function WorkspaceCanvasInner({
     launchAgentInNode,
     agentSettings,
     workspacePath,
+    standardWindowSizeBucket: agentSettings.standardWindowSizeBucket,
     createTaskNode,
     closeNode,
     actionRefs,
@@ -263,7 +265,6 @@ export function WorkspaceCanvasInner({
     isTrackpadCanvasMode,
     focusNodeOnClick: agentSettings.focusNodeOnClick,
     focusNodeTargetZoom: agentSettings.focusNodeTargetZoom,
-    defaultTerminalWindowScalePercent: agentSettings.defaultTerminalWindowScalePercent,
     isShiftPressedRef: canvasState.isShiftPressedRef,
     selectionDraftRef: canvasState.selectionDraftRef,
     setSelectionDraftUi: canvasState.setSelectionDraftUi,
@@ -282,6 +283,7 @@ export function WorkspaceCanvasInner({
     spacesRef: canvasState.spacesRef,
     onSpacesChange,
     nodesRef,
+    standardWindowSizeBucket: agentSettings.standardWindowSizeBucket,
     createNodeForSession,
     createNoteNode,
   })
@@ -324,6 +326,7 @@ export function WorkspaceCanvasInner({
     reactFlow,
     spacesRef: canvasState.spacesRef,
     onSpacesChange,
+    standardWindowSizeBucket: agentSettings.standardWindowSizeBucket,
   })
   workspaceCanvasHooks.useWorkspaceCanvasRuntimeBindings({
     setNodes,

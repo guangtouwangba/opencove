@@ -24,8 +24,8 @@ export function useWorkspaceCanvasNodesStore({
   onSpacesChange,
   onRequestPersistFlush,
   onShowMessage,
-  defaultTerminalWindowScalePercent,
   onNodeCreated,
+  standardWindowSizeBucket,
 }: UseWorkspaceCanvasNodesStoreParams): UseWorkspaceCanvasNodesStoreResult {
   const reactFlow = useReactFlow<Node<TerminalNodeData>, Edge>()
   const nodesRef = useRef(nodes)
@@ -415,13 +415,13 @@ export function useWorkspaceCanvasNodesStore({
     [onRequestPersistFlush, setNodes],
   )
   const { createNodeForSession, createNoteNode, createTaskNode } = useWorkspaceCanvasNodeCreation({
-    defaultTerminalWindowScalePercent,
     nodesRef,
     spacesRef,
     onRequestPersistFlush,
     onShowMessage,
     onNodeCreated: onNodeCreated ?? fallbackOnNodeCreated,
     setNodes,
+    standardWindowSizeBucket,
   })
 
   return {

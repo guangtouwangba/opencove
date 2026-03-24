@@ -34,6 +34,7 @@ import type {
   OpenWorkspacePathInput,
   PersistWriteResult,
   ReadAppStateResult,
+  WindowDisplayInfo,
   ReadNodeScrollbackInput,
   ResizeTerminalInput,
   RemoveGitWorktreeInput,
@@ -69,6 +70,9 @@ export interface OpenCoveApi {
   }
   windowChrome: {
     setTheme: (payload: SetWindowChromeThemeInput) => Promise<void>
+  }
+  windowMetrics: {
+    getDisplayInfo: () => Promise<WindowDisplayInfo>
   }
   clipboard: {
     readText: () => Promise<string>
