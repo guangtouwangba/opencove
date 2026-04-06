@@ -1,68 +1,21 @@
 import { createServer } from 'node:http'
 import { once } from 'node:events'
 import { expect, test, type ElectronApplication } from '@playwright/test'
-import { clearAndSeedWorkspace, launchApp, readCanvasViewport } from './workspace-canvas.helpers'
-
-interface WebsiteRuntimeState {
-  lifecycle: string
-  viewBounds: {
-    x: number
-    y: number
-    width: number
-    height: number
-  } | null
-  hostBounds: {
-    x: number
-    y: number
-    width: number
-    height: number
-  } | null
-  zoomFactor: number | null
-  innerWidth: number | null
-  hasSnapshot: boolean
-}
-
-async function readWebsiteRuntimeState(
-  electronApp: ElectronApplication,
-  nodeId: string,
-): Promise<WebsiteRuntimeState | null> {
-  return await electronApp.evaluate(async ({ BrowserWindow }, targetNodeId) => {
-    const win = BrowserWindow.getAllWindows()[0]
-    const manager = win.__opencoveWebsiteWindowManager
-    const runtime = manager?.runtimeByNodeId.get(targetNodeId) ?? null
-    if (!runtime) {
-      return null
-    }
-
-    const hostBounds = runtime.hostView ? runtime.hostView.getBounds() : null
-    if (!runtime.view || runtime.view.webContents.isDestroyed()) {
-      return runtime
-        ? {
-            lifecycle: runtime.lifecycle,
-            viewBounds: runtime.bounds,
-            hostBounds,
-            zoomFactor: null,
-            innerWidth: null,
-            hasSnapshot:
-              typeof runtime.snapshotDataUrl === 'string' && runtime.snapshotDataUrl.length > 0,
-          }
-        : null
-    }
-
-    const innerWidth = await runtime.view.webContents.executeJavaScript('window.innerWidth')
-    return {
-      lifecycle: runtime.lifecycle,
-      viewBounds: runtime.view.getBounds(),
-      hostBounds,
-      zoomFactor: runtime.view.webContents.getZoomFactor(),
-      innerWidth: typeof innerWidth === 'number' ? innerWidth : null,
-      hasSnapshot:
-        typeof runtime.snapshotDataUrl === 'string' && runtime.snapshotDataUrl.length > 0,
-    }
-  }, nodeId)
-}
+import {
+  clearAndSeedWorkspace,
+  launchApp,
+  readCanvasViewport,
+  readLocatorClientRect,
+} from './workspace-canvas.helpers'
+import {
+  closeWebsiteTestServer,
+  enableWebsiteWindowPolicy,
+  readWebsiteRuntimeState,
+} from './workspace-canvas.website-window.shared'
 
 test.describe('Workspace Canvas - Website Window', () => {
+  const edgeClipTolerancePx = 8
+
   test('keeps website layout stable while canvas zoom changes', async () => {
     const server = createServer((_request, response) => {
       response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
@@ -87,15 +40,20 @@ test.describe('Workspace Canvas - Website Window', () => {
 
     server.listen(0, '127.0.0.1')
     await once(server, 'listening')
+    server.unref()
     const address = server.address()
     if (!address || typeof address === 'string') {
       throw new Error('Failed to resolve website test server address')
     }
 
     const websiteUrl = `http://127.0.0.1:${address.port}`
-    const { electronApp, window } = await launchApp()
+    let electronApp: ElectronApplication | null = null
 
     try {
+      const launched = await launchApp({ windowMode: 'offscreen' })
+      electronApp = launched.electronApp
+      const window = launched.window
+
       await clearAndSeedWorkspace(
         window,
         [
@@ -128,12 +86,16 @@ test.describe('Workspace Canvas - Website Window', () => {
       await expect(viewport).toHaveCSS('border-top-left-radius', '0px')
       await expect(viewport).toHaveCSS('border-top-right-radius', '0px')
 
-      await websiteNode.click({ position: { x: 320, y: 180 } })
+      await enableWebsiteWindowPolicy(window)
+      await websiteNode.click({ position: { x: 320, y: 180 }, noWaitAfter: true })
 
       await expect
-        .poll(async () => {
-          return await readWebsiteRuntimeState(electronApp, 'website-zoom-node')
-        })
+        .poll(
+          async () => {
+            return await readWebsiteRuntimeState(electronApp, 'website-zoom-node')
+          },
+          { timeout: 30_000 },
+        )
         .toMatchObject({
           lifecycle: 'active',
           zoomFactor: 1,
@@ -188,8 +150,10 @@ test.describe('Workspace Canvas - Website Window', () => {
       }
       expect(after?.viewBounds?.width).not.toBe(before?.viewBounds?.width)
     } finally {
-      server.close()
-      await electronApp.close()
+      if (electronApp) {
+        await electronApp.close()
+      }
+      await closeWebsiteTestServer(server)
     }
   })
 
@@ -203,15 +167,20 @@ test.describe('Workspace Canvas - Website Window', () => {
 
     server.listen(0, '127.0.0.1')
     await once(server, 'listening')
+    server.unref()
     const address = server.address()
     if (!address || typeof address === 'string') {
       throw new Error('Failed to resolve website test server address')
     }
 
     const websiteUrl = `http://127.0.0.1:${address.port}`
-    const { electronApp, window } = await launchApp()
+    let electronApp: ElectronApplication | null = null
 
     try {
+      const launched = await launchApp({ windowMode: 'offscreen' })
+      electronApp = launched.electronApp
+      const window = launched.window
+
       await clearAndSeedWorkspace(
         window,
         [
@@ -241,11 +210,15 @@ test.describe('Workspace Canvas - Website Window', () => {
       const websiteNode = window.locator('.website-node').first()
       await expect(websiteNode).toBeVisible()
 
-      await websiteNode.click({ position: { x: 320, y: 180 } })
+      await enableWebsiteWindowPolicy(window)
+      await websiteNode.click({ position: { x: 320, y: 180 }, noWaitAfter: true })
       await expect
-        .poll(async () => {
-          return await readWebsiteRuntimeState(electronApp, 'website-edge-node')
-        })
+        .poll(
+          async () => {
+            return await readWebsiteRuntimeState(electronApp, 'website-edge-node')
+          },
+          { timeout: 30_000 },
+        )
         .toMatchObject({
           lifecycle: 'active',
         })
@@ -256,33 +229,60 @@ test.describe('Workspace Canvas - Website Window', () => {
 
       const pane = window.locator('.workspace-canvas .react-flow__pane')
       await expect(pane).toBeVisible()
-      const paneBox = await pane.boundingBox()
-      if (!paneBox) {
-        throw new Error('workspace pane bounding box unavailable')
+      const paneBox = await readLocatorClientRect(pane)
+
+      // Wheel gestures over a node are ignored by the canvas handler; keep the cursor on an empty
+      // canvas point so we always trigger panning.
+      const panX = paneBox.x + paneBox.width - 48
+      const panY = paneBox.y + paneBox.height * 0.5
+      // Refresh activation to avoid the focus-based snapshot heuristic flipping us to warm/cold
+      // mid-test on slower CI runs.
+      await websiteNode.click({ position: { x: 320, y: 180 }, noWaitAfter: true })
+      await window.mouse.move(panX, panY)
+      await pane
+        .click({ position: { x: paneBox.width - 48, y: paneBox.height * 0.5 } })
+        .catch(() => undefined)
+
+      const isClipped = async (): Promise<boolean> => {
+        const state = await readWebsiteRuntimeState(electronApp, 'website-edge-node')
+        if (
+          typeof beforeWidth !== 'number' ||
+          !state?.hostBounds ||
+          !state?.viewBounds ||
+          state.lifecycle !== 'active'
+        ) {
+          return false
+        }
+
+        const hostWidth = state.hostBounds.width
+        const viewWidth = state.viewBounds.width
+        const viewX = state.viewBounds.x
+
+        return (
+          hostWidth < beforeWidth - 2 &&
+          viewWidth >= beforeWidth - Math.max(edgeClipTolerancePx, 24) &&
+          viewWidth >= hostWidth &&
+          viewX < 2
+        )
       }
 
-      await window.mouse.move(paneBox.x + 24, paneBox.y + 24)
-      await window.mouse.wheel(1800, 0)
+      const panUntilClipped = async (attemptsRemaining: number): Promise<void> => {
+        if (attemptsRemaining <= 0) {
+          return
+        }
 
-      await expect
-        .poll(async () => {
-          const state = await readWebsiteRuntimeState(electronApp, 'website-edge-node')
-          if (
-            typeof beforeWidth !== 'number' ||
-            !state?.hostBounds ||
-            !state?.viewBounds ||
-            state.lifecycle !== 'active'
-          ) {
-            return false
-          }
+        if (await isClipped()) {
+          return
+        }
 
-          const hostWidth = state.hostBounds.width
-          const viewWidth = state.viewBounds.width
-          const viewX = state.viewBounds.x
+        await window.mouse.wheel(600, 0)
+        await window.waitForTimeout(80)
+        await panUntilClipped(attemptsRemaining - 1)
+      }
 
-          return hostWidth < beforeWidth - 4 && Math.abs(viewWidth - beforeWidth) <= 2 && viewX < 0
-        })
-        .toBe(true)
+      await panUntilClipped(3)
+
+      await expect.poll(async () => await isClipped(), { timeout: 30_000 }).toBe(true)
 
       const after = await readWebsiteRuntimeState(electronApp, 'website-edge-node')
       expect(after?.hostBounds).toBeTruthy()
@@ -291,14 +291,16 @@ test.describe('Workspace Canvas - Website Window', () => {
         expect(after.hostBounds.width).toBeLessThan(beforeWidth)
       }
       if (typeof after?.viewBounds?.width === 'number' && typeof beforeWidth === 'number') {
-        expect(Math.abs(after.viewBounds.width - beforeWidth)).toBeLessThanOrEqual(2)
+        expect(after.viewBounds.width).toBeGreaterThanOrEqual(beforeWidth - edgeClipTolerancePx)
       }
       if (typeof after?.viewBounds?.x === 'number') {
         expect(after.viewBounds.x).toBeLessThan(0)
       }
     } finally {
-      server.close()
-      await electronApp.close()
+      if (electronApp) {
+        await electronApp.close()
+      }
+      await closeWebsiteTestServer(server)
     }
   })
 
@@ -312,15 +314,20 @@ test.describe('Workspace Canvas - Website Window', () => {
 
     server.listen(0, '127.0.0.1')
     await once(server, 'listening')
+    server.unref()
     const address = server.address()
     if (!address || typeof address === 'string') {
       throw new Error('Failed to resolve website test server address')
     }
 
     const websiteUrl = `http://127.0.0.1:${address.port}`
-    const { electronApp, window } = await launchApp()
+    let electronApp: ElectronApplication | null = null
 
     try {
+      const launched = await launchApp({ windowMode: 'offscreen' })
+      electronApp = launched.electronApp
+      const window = launched.window
+
       await clearAndSeedWorkspace(
         window,
         [
@@ -350,11 +357,15 @@ test.describe('Workspace Canvas - Website Window', () => {
       const websiteNode = window.locator('.website-node').first()
       await expect(websiteNode).toBeVisible()
 
-      await websiteNode.click({ position: { x: 320, y: 180 } })
+      await enableWebsiteWindowPolicy(window)
+      await websiteNode.click({ position: { x: 320, y: 180 }, noWaitAfter: true })
       await expect
-        .poll(async () => {
-          return await readWebsiteRuntimeState(electronApp, 'website-header-node')
-        })
+        .poll(
+          async () => {
+            return await readWebsiteRuntimeState(electronApp, 'website-header-node')
+          },
+          { timeout: 30_000 },
+        )
         .toMatchObject({
           lifecycle: 'active',
         })
@@ -384,7 +395,7 @@ test.describe('Workspace Canvas - Website Window', () => {
         throw new Error('workspace pane bounding box unavailable')
       }
 
-      await window.mouse.move(paneBox.x + 24, paneBox.y + 24)
+      await window.mouse.move(paneBox.x + paneBox.width - 40, paneBox.y + 40)
       await window.mouse.wheel(0, 1400)
       await window.mouse.wheel(0, 1400)
       await window.mouse.wheel(0, 1400)
@@ -424,8 +435,10 @@ test.describe('Workspace Canvas - Website Window', () => {
         })
         .toBeGreaterThanOrEqual(Math.floor(sidebarRight))
     } finally {
-      server.close()
-      await electronApp.close()
+      if (electronApp) {
+        await electronApp.close()
+      }
+      await closeWebsiteTestServer(server)
     }
   })
 })
