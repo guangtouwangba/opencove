@@ -236,6 +236,12 @@ export default function App(): React.JSX.Element {
     typeof window !== 'undefined' && window.opencoveApi?.meta?.platform
       ? window.opencoveApi.meta.platform
       : undefined
+
+  useEffect(() => {
+    if (platform) {
+      document.documentElement.dataset.covePlatform = platform
+    }
+  }, [platform])
   const commandCenterBindings = useMemo(
     () =>
       resolveCommandKeybinding({
