@@ -1,6 +1,7 @@
 import { createWriteStream, existsSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { PTY_HOST_PROTOCOL_VERSION, isPtyHostMessage } from './protocol'
+import { resolvePtyHostSpawnEnv } from './spawnEnv'
 import type {
   PtyHostMessage,
   PtyHostRequest,
@@ -355,11 +356,7 @@ export class PtyHostSupervisor {
   }
 
   public async spawn(options: PtyHostSpawnOptions): Promise<{ sessionId: string }> {
-    const env = options.env ? { ...options.env } : { ...process.env }
-    // The app uses ELECTRON_RUN_AS_NODE to run bundled CLI/worker entrypoints via Electron.
-    // Leaking it into interactive shells breaks launching Electron-based tooling (including
-    // OpenCove dev via electron-vite).
-    delete env.ELECTRON_RUN_AS_NODE
+    const env = resolvePtyHostSpawnEnv(options.env)
     let attemptedChild: PtyHostProcess | null = null
     const spawnOnce = async (): Promise<{ sessionId: string }> => {
       await this.ensureReady()

@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import path from 'path'
 import type {
   TaskAgentSessionRecord,
@@ -31,6 +31,11 @@ export {
   launchApp,
   removePathWithRetry,
 }
+export {
+  readCanvasViewport,
+  readWorkspaceViewState,
+  selectCoveOption,
+} from './workspace-canvas.viewState'
 
 export interface SeedAgentData {
   provider: 'claude-code' | 'codex' | 'opencode' | 'gemini'
@@ -247,15 +252,30 @@ export async function seedWorkspaceState(
   }
 
   const trySeed = async (attempt: number): Promise<boolean> => {
-    if (attempt >= 4) {
+    if (attempt >= 6) {
       return false
     }
 
-    const writeResult = await window.evaluate(async state => {
-      return await window.opencoveApi.persistence.writeWorkspaceStateRaw({
-        raw: JSON.stringify(state),
-      })
-    }, seededState)
+    type WriteWorkspaceStateResult =
+      | { ok: true }
+      | { ok: false; reason: string; error: { code: string; debugMessage?: string } }
+    let writeResult: WriteWorkspaceStateResult
+    try {
+      writeResult = await window.evaluate(async state => {
+        return await window.opencoveApi.persistence.writeWorkspaceStateRaw({
+          raw: JSON.stringify(state),
+        })
+      }, seededState)
+    } catch (error) {
+      if (isRetryableNavigationError(error)) {
+        await window
+          .waitForLoadState('domcontentloaded', { timeout: 60_000 })
+          .catch(() => undefined)
+        return await trySeed(attempt + 1)
+      }
+
+      throw error
+    }
 
     if (!writeResult.ok) {
       throw new Error(
@@ -333,9 +353,26 @@ export async function seedWorkspaceState(
       throw error
     }
 
+    const expectedWorkspaceCount = payload.workspaces.length
     let workspaceCount = 0
     try {
-      workspaceCount = await window.locator('.workspace-item').count()
+      workspaceCount = await (async () => {
+        const deadline = Date.now() + 6_000
+        let count = 0
+
+        while (Date.now() < deadline) {
+          // eslint-disable-next-line no-await-in-loop -- bounded UI polling
+          count = await window.locator('.workspace-item').count()
+          if (count >= expectedWorkspaceCount) {
+            break
+          }
+
+          // eslint-disable-next-line no-await-in-loop -- bounded UI polling
+          await window.waitForTimeout(50)
+        }
+
+        return count
+      })()
     } catch (error) {
       if (isRetryableNavigationError(error)) {
         return await trySeed(attempt + 1)
@@ -390,131 +427,42 @@ export async function clearAndSeedWorkspace(
   })
 }
 
-export async function readCanvasViewport(
+export async function clickCreateSpaceFromSelectionContextMenu(
   window: Page,
-): Promise<{ x: number; y: number; zoom: number }> {
-  return await window.evaluate(() => {
-    const viewport = document.querySelector('.react-flow__viewport') as HTMLElement | null
-    if (!viewport) {
-      return { x: 0, y: 0, zoom: 1 }
-    }
-
-    const style = window.getComputedStyle(viewport)
-    const transform = style.transform
-
-    const matrixMatch = transform.match(/matrix\(([^)]+)\)/)
-    if (matrixMatch) {
-      const values = matrixMatch[1].split(',').map(item => Number(item.trim()))
-      if (values.length < 6) {
-        return { x: 0, y: 0, zoom: 1 }
-      }
-
-      const zoom = Number.isFinite(values[0]) ? values[0] : 1
-      const x = Number.isFinite(values[4]) ? values[4] : 0
-      const y = Number.isFinite(values[5]) ? values[5] : 0
-
-      return { x, y, zoom }
-    }
-
-    const matrix3dMatch = transform.match(/matrix3d\(([^)]+)\)/)
-    if (!matrix3dMatch) {
-      return { x: 0, y: 0, zoom: 1 }
-    }
-
-    const values = matrix3dMatch[1].split(',').map(item => Number(item.trim()))
-    if (values.length < 16) {
-      return { x: 0, y: 0, zoom: 1 }
-    }
-
-    const zoom = Number.isFinite(values[0]) ? values[0] : 1
-    const x = Number.isFinite(values[12]) ? values[12] : 0
-    const y = Number.isFinite(values[13]) ? values[13] : 0
-
-    return { x, y, zoom }
-  })
-}
-
-export async function readWorkspaceViewState(
-  window: Page,
-  workspaceId: string,
-): Promise<{
-  viewport: { x: number; y: number; zoom: number }
-  isMinimapVisible: boolean
-  activeSpaceId: string | null
-} | null> {
-  return await window.evaluate(
-    ({ key, id }) => {
-      const raw = window.localStorage.getItem(key)
-      if (!raw) {
-        return null
-      }
-
-      try {
-        const parsed = JSON.parse(raw) as {
-          workspaces?: Record<
-            string,
-            {
-              viewport?: { x?: unknown; y?: unknown; zoom?: unknown }
-              isMinimapVisible?: unknown
-              activeSpaceId?: unknown
-            }
-          >
-        }
-
-        const workspace = parsed.workspaces?.[id]
-        if (!workspace) {
-          return null
-        }
-
-        const viewportRecord = workspace.viewport ?? {}
-        const x =
-          typeof viewportRecord.x === 'number' && Number.isFinite(viewportRecord.x)
-            ? viewportRecord.x
-            : 0
-        const y =
-          typeof viewportRecord.y === 'number' && Number.isFinite(viewportRecord.y)
-            ? viewportRecord.y
-            : 0
-        const zoom =
-          typeof viewportRecord.zoom === 'number' &&
-          Number.isFinite(viewportRecord.zoom) &&
-          viewportRecord.zoom > 0
-            ? viewportRecord.zoom
-            : 1
-
-        const isMinimapVisible =
-          typeof workspace.isMinimapVisible === 'boolean' ? workspace.isMinimapVisible : true
-
-        const activeSpaceId =
-          typeof workspace.activeSpaceId === 'string' && workspace.activeSpaceId.trim().length > 0
-            ? workspace.activeSpaceId
-            : null
-
-        return {
-          viewport: { x, y, zoom },
-          isMinimapVisible,
-          activeSpaceId,
-        }
-      } catch {
-        return null
-      }
-    },
-    { key: viewStateStorageKey, id: workspaceId },
-  )
-}
-
-export async function selectCoveOption(
-  window: Page,
-  testId: string,
-  optionValue: string,
+  trigger: Locator,
+  options?: {
+    triggerPosition?: { x: number; y: number }
+    targetMountId?: string
+    visibleTimeoutMs?: number
+  },
 ): Promise<void> {
-  const trigger = window.locator(`[data-testid="${testId}-trigger"]`)
-  await expect(trigger).toBeVisible()
-  await trigger.click()
+  const createSpaceAction = window.locator('[data-testid="workspace-selection-create-space"]')
+  const pickerWindow = window.locator('[data-testid="workspace-space-target-mount-window"]')
+  const pickerConfirm = window.locator('[data-testid="workspace-space-target-mount-confirm"]')
 
-  const menu = window.locator(`[data-testid="${testId}-menu"]`)
-  await expect(menu).toBeVisible()
-  await menu
-    .locator(`[data-cove-select-option-value="${optionValue.replaceAll('"', '\\"')}"]`)
-    .click()
+  await trigger.click({
+    button: 'right',
+    ...(options?.triggerPosition ? { position: options.triggerPosition } : {}),
+  })
+  await expect(createSpaceAction).toBeVisible({ timeout: options?.visibleTimeoutMs ?? 10_000 })
+  await createSpaceAction.click()
+
+  const pickerVisible = await pickerWindow
+    .waitFor({ state: 'visible', timeout: 1_000 })
+    .then(() => true)
+    .catch(() => false)
+
+  if (!pickerVisible) {
+    return
+  }
+
+  if (options?.targetMountId) {
+    await window
+      .locator(`[data-testid="workspace-space-target-mount-${options.targetMountId}"]`)
+      .check()
+  }
+
+  await expect(pickerConfirm).toBeEnabled()
+  await pickerConfirm.click()
+  await expect(pickerWindow).toHaveCount(0)
 }

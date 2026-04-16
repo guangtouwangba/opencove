@@ -1,13 +1,18 @@
 import { app, shell, BrowserWindow, nativeImage } from 'electron'
-import { join, resolve } from 'path'
+import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { hydrateCliEnvironmentForAppLaunch } from '../../platform/os/CliEnvironment'
 import { registerIpcHandlers } from './ipc/registerIpcHandlers'
 import { registerControlSurfaceServer } from './controlSurface/registerControlSurfaceServer'
+import {
+  configureAppCommandLine,
+  configureAppUserDataPath,
+  isTruthyEnv,
+  resolveE2EWindowMode,
+} from './appRuntimeConfig'
 import { setRuntimeIconTestState } from './iconTestHarness'
 import { resolveRuntimeIconPath } from './runtimeIcon'
 import { resolveTitleBarOverlay } from './ipc/registerWindowChromeIpcHandlers'
-import { shouldEnableWaylandIme } from './waylandIme'
 import { createApprovedWorkspaceStore } from '../../contexts/workspace/infrastructure/approval/ApprovedWorkspaceStore'
 import { createPtyRuntime } from '../../contexts/terminal/presentation/main-ipc/runtime'
 import { resolveHomeWorkerEndpoint } from './worker/resolveHomeWorkerEndpoint'
@@ -16,137 +21,33 @@ import { hasOwnedLocalWorkerProcess, stopOwnedLocalWorker } from './worker/local
 import { createMainRuntimeDiagnosticsLogger } from './runtimeDiagnostics'
 import { createStandaloneMountAwarePtyRuntime } from './controlSurface/standaloneMountAwarePtyRuntime'
 import { registerQuickPhrasesContextMenu } from './contextMenu/registerQuickPhrasesContextMenu'
+import { registerQuitCoordinator } from './quitCoordinator'
 import {
   isAllowedNavigationTarget,
   resolveDevRendererOrigin,
   shouldOpenUrlExternally,
 } from './navigationGuards'
+import { requestRendererPersistFlush } from './rendererPersistFlush'
 
 let ipcDisposable: ReturnType<typeof registerIpcHandlers> | null = null
 let controlSurfaceDisposable: ReturnType<typeof registerControlSurfaceServer> | null = null
-let isCleaningUpOwnedLocalWorkerOnQuit = false
 let workerEndpointResolverForContextMenu: ReturnType<
   typeof createHomeWorkerEndpointResolver
 > | null = null
-const APP_USER_DATA_DIRECTORY_NAME = 'opencove'
 const OPENCOVE_APP_USER_MODEL_ID = 'dev.deadwave.opencove'
+const WINDOW_CLOSE_PERSIST_FLUSH_TIMEOUT_MS = 1_500
+let isAppQuitInProgress = false
 
-if (process.env['NODE_ENV'] === 'test') {
-  // Keep renderer responsive in headful CI where occlusion/backgrounding can pause rAF/timers (esp. macOS).
-  app.commandLine.appendSwitch('disable-renderer-backgrounding')
-  app.commandLine.appendSwitch('disable-backgrounding-occluded-windows')
-  app.commandLine.appendSwitch('disable-background-timer-throttling')
+app.on('before-quit', () => {
+  isAppQuitInProgress = true
+})
 
-  const existingDisableFeatures =
-    typeof app.commandLine.getSwitchValue === 'function'
-      ? app.commandLine.getSwitchValue('disable-features')
-      : ''
-  const disableFeatures = new Set(
-    existingDisableFeatures
-      .split(',')
-      .map(value => value.trim())
-      .filter(value => value.length > 0),
-  )
-  disableFeatures.add('CalculateNativeWinOcclusion')
-  app.commandLine.appendSwitch('disable-features', [...disableFeatures].join(','))
-}
-
-if (process.platform === 'linux' && process.env['NODE_ENV'] === 'test') {
-  const disableSandboxForCi =
-    (process.env['CI'] === '1' || process.env['CI']?.toLowerCase() === 'true') &&
-    process.env['ELECTRON_DISABLE_SANDBOX'] === '1'
-
-  if (disableSandboxForCi) {
-    app.commandLine.appendSwitch('no-sandbox')
-    app.commandLine.appendSwitch('disable-dev-shm-usage')
-  }
-}
-
-if (shouldEnableWaylandIme({ platform: process.platform, env: process.env })) {
-  app.commandLine.appendSwitch('enable-wayland-ime')
-}
-
-function preserveCanonicalUserDataPath(): void {
-  const appDataPath = app.getPath('appData')
-  app.setPath('userData', resolve(appDataPath, APP_USER_DATA_DIRECTORY_NAME))
-}
-
-if (process.env.NODE_ENV !== 'test') {
-  preserveCanonicalUserDataPath()
-}
-
-if (process.env.NODE_ENV === 'test' && process.env['OPENCOVE_TEST_USER_DATA_DIR']) {
-  app.setPath('userData', resolve(process.env['OPENCOVE_TEST_USER_DATA_DIR']))
-} else if (app.isPackaged === false) {
-  const wantsSharedUserData =
-    isTruthyEnv(process.env['OPENCOVE_DEV_USE_SHARED_USER_DATA']) ||
-    process.argv.includes('--opencove-shared-user-data') ||
-    process.argv.includes('--shared-user-data')
-
-  if (!wantsSharedUserData) {
-    const explicitDevUserDataDir = process.env['OPENCOVE_DEV_USER_DATA_DIR']
-    const defaultUserDataDir = app.getPath('userData')
-    const devUserDataDir = explicitDevUserDataDir
-      ? resolve(explicitDevUserDataDir)
-      : `${defaultUserDataDir}-dev`
-
-    app.setPath('userData', devUserDataDir)
-  }
-}
+configureAppCommandLine()
+configureAppUserDataPath()
 
 const E2E_OFFSCREEN_COORDINATE = -50_000
-type E2EWindowMode = 'normal' | 'inactive' | 'hidden' | 'offscreen'
 const mainWindowRuntimeLogger = createMainRuntimeDiagnosticsLogger('main-window')
 const mainAppRuntimeLogger = createMainRuntimeDiagnosticsLogger('main-app')
-
-function isTruthyEnv(rawValue: string | undefined): boolean {
-  if (!rawValue) {
-    return false
-  }
-
-  return rawValue === '1' || rawValue.toLowerCase() === 'true'
-}
-
-function parseE2EWindowMode(rawValue: string | undefined): E2EWindowMode | null {
-  if (!rawValue) {
-    return null
-  }
-
-  const normalized = rawValue.toLowerCase()
-  if (
-    normalized === 'normal' ||
-    normalized === 'inactive' ||
-    normalized === 'hidden' ||
-    normalized === 'offscreen'
-  ) {
-    return normalized
-  }
-
-  return null
-}
-
-function resolveE2EWindowMode(): E2EWindowMode {
-  if (process.env['NODE_ENV'] !== 'test') {
-    return 'normal'
-  }
-
-  const explicitMode = parseE2EWindowMode(process.env['OPENCOVE_E2E_WINDOW_MODE'])
-  if (explicitMode) {
-    // E2E runs must never steal OS focus. Treat explicit "normal" as "inactive".
-    if (explicitMode === 'normal') {
-      return 'inactive'
-    }
-
-    return explicitMode
-  }
-
-  // Keep honoring the legacy no-focus behavior flag alongside window modes.
-  if (isTruthyEnv(process.env['OPENCOVE_E2E_NO_FOCUS'])) {
-    return 'inactive'
-  }
-
-  return 'offscreen'
-}
 
 function createWindow(): void {
   const devOrigin = is.dev ? resolveDevRendererOrigin() : null
@@ -166,6 +67,7 @@ function createWindow(): void {
   }
   const initialWidth = isTestEnv ? 1440 : 1200
   const initialHeight = isTestEnv ? 900 : 800
+  let hasCoordinatedWindowClose = false
 
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -186,6 +88,7 @@ function createWindow(): void {
     ...(runtimeIconPath ? { icon: runtimeIconPath } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      additionalArguments: [`--opencove-main-process-pid=${process.pid}`],
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: !disableRendererSandboxForTests,
@@ -197,6 +100,28 @@ function createWindow(): void {
     window: mainWindow,
     userDataPath: app.getPath('userData'),
     workerEndpointResolver: workerEndpointResolverForContextMenu,
+  })
+  mainWindow.on('close', event => {
+    if (hasCoordinatedWindowClose || isAppQuitInProgress || mainWindow.isDestroyed()) {
+      return
+    }
+
+    if (!event || typeof event.preventDefault !== 'function') {
+      return
+    }
+
+    event.preventDefault()
+    hasCoordinatedWindowClose = true
+
+    void requestRendererPersistFlush(mainWindow.webContents, WINDOW_CLOSE_PERSIST_FLUSH_TIMEOUT_MS)
+      .catch(() => undefined)
+      .finally(() => {
+        if (mainWindow.isDestroyed()) {
+          return
+        }
+
+        mainWindow.close()
+      })
   })
   mainWindow.on('closed', () => {
     quickPhrasesContextMenuDisposable.dispose()
@@ -406,23 +331,21 @@ app.whenReady().then(async () => {
 
 // Quit when all windows are closed (tests must exit on macOS, otherwise Playwright can leave Electron running).
 app.on('window-all-closed', () => {
-  if (process.env.NODE_ENV === 'test' || process.platform !== 'darwin') {
+  const shouldKeepTestAppAliveAfterWindowClose =
+    process.env.NODE_ENV === 'test' &&
+    isTruthyEnv(process.env['OPENCOVE_TEST_KEEP_APP_ALIVE_ON_WINDOW_ALL_CLOSED'])
+
+  if (
+    !shouldKeepTestAppAliveAfterWindowClose &&
+    (process.env.NODE_ENV === 'test' || process.platform !== 'darwin')
+  ) {
     app.quit()
   }
 })
 
-app.on('before-quit', event => {
-  if (isCleaningUpOwnedLocalWorkerOnQuit || !hasOwnedLocalWorkerProcess()) {
-    return
-  }
-
-  event.preventDefault()
-  isCleaningUpOwnedLocalWorkerOnQuit = true
-  void stopOwnedLocalWorker()
-    .catch(() => undefined)
-    .finally(() => {
-      app.quit()
-    })
+registerQuitCoordinator({
+  hasOwnedLocalWorkerProcess,
+  stopOwnedLocalWorker,
 })
 
 app.on('will-quit', () => {

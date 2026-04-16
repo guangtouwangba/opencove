@@ -161,8 +161,17 @@ export function writeNormalizedAppState(
       }
     }
 
-    // Keep scrollback only for still-present nodes.
-    db.exec('DELETE FROM node_scrollback WHERE node_id NOT IN (SELECT id FROM nodes)')
+    // Durable scrollback belongs only to plain terminal nodes. Agent history must be restored by
+    // the external CLI's own resume semantics instead of OpenCove persistence.
+    db.exec(
+      "DELETE FROM node_scrollback WHERE node_id NOT IN (SELECT id FROM nodes WHERE kind = 'terminal')",
+    )
+
+    // Agent placeholder scrollback is a UI cache only. Clear placeholders for nodes that no longer
+    // exist (or aren't agents) so we don't accumulate unreferenced cache entries over time.
+    db.exec(
+      "DELETE FROM agent_node_placeholder_scrollback WHERE node_id NOT IN (SELECT id FROM nodes WHERE kind = 'agent')",
+    )
 
     return nextRevision
   })
@@ -191,6 +200,10 @@ export function writeNormalizedScrollbacks(
 
     for (const workspace of state.workspaces) {
       for (const node of workspace.nodes) {
+        if (node.kind !== 'terminal') {
+          continue
+        }
+
         const scrollback = normalizeScrollback(node.scrollback)
         if (!scrollback) {
           continue

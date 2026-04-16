@@ -39,6 +39,7 @@ import { registerControlSurfaceIpcHandlers } from './registerControlSurfaceIpcHa
 import { IPC_CHANNELS } from '../../../shared/contracts/ipc'
 import { registerHandledIpc } from './handle'
 import {
+  createPtyAgentPlaceholderMirror,
   createPtyScrollbackMirror,
   normalizePtySessionNodeBindingsPayload,
 } from './ptyScrollbackMirror'
@@ -104,6 +105,15 @@ export function registerIpcHandlers(deps?: {
     getPersistenceStore,
   })
 
+  const agentPlaceholderMirror = createPtyAgentPlaceholderMirror({
+    source: {
+      snapshot: sessionId => ptyRuntime.snapshot(sessionId),
+    },
+    getPersistenceStore,
+  })
+
+  let mirrorDisposePromise: Promise<void> | null = null
+
   registerHandledIpc(
     IPC_CHANNELS.ptySyncSessionBindings,
     async (_event, payload: unknown): Promise<void> => {
@@ -116,6 +126,30 @@ export function registerIpcHandlers(deps?: {
           : normalized.bindings
 
       scrollbackMirror.setBindings(limitedBindings)
+    },
+    { defaultErrorCode: 'common.unexpected' },
+  )
+
+  registerHandledIpc(
+    IPC_CHANNELS.ptySyncAgentPlaceholderBindings,
+    async (_event, payload: unknown): Promise<void> => {
+      const normalized = normalizePtySessionNodeBindingsPayload(payload)
+
+      const MAX_BINDINGS = 15_000
+      const limitedBindings =
+        normalized.bindings.length > MAX_BINDINGS
+          ? normalized.bindings.slice(0, MAX_BINDINGS)
+          : normalized.bindings
+
+      agentPlaceholderMirror.setBindings(limitedBindings)
+    },
+    { defaultErrorCode: 'common.unexpected' },
+  )
+
+  registerHandledIpc(
+    IPC_CHANNELS.ptyFlushScrollbackMirrors,
+    async (): Promise<void> => {
+      await Promise.allSettled([scrollbackMirror.flush(), agentPlaceholderMirror.flush()])
     },
     { defaultErrorCode: 'common.unexpected' },
   )
@@ -174,7 +208,12 @@ export function registerIpcHandlers(deps?: {
   disposables.push({
     dispose: () => {
       ipcMain.removeHandler(IPC_CHANNELS.ptySyncSessionBindings)
-      scrollbackMirror.dispose()
+      ipcMain.removeHandler(IPC_CHANNELS.ptySyncAgentPlaceholderBindings)
+      ipcMain.removeHandler(IPC_CHANNELS.ptyFlushScrollbackMirrors)
+      mirrorDisposePromise ??= Promise.allSettled([
+        scrollbackMirror.dispose(),
+        agentPlaceholderMirror.dispose(),
+      ]).then(() => undefined)
     },
   })
 
@@ -186,9 +225,11 @@ export function registerIpcHandlers(deps?: {
 
       const storePromise = persistenceStorePromise
       persistenceStorePromise = null
-      storePromise
-        ?.then(store => {
-          store.dispose()
+      const pendingMirrorDispose = mirrorDisposePromise ?? Promise.resolve()
+      void pendingMirrorDispose
+        .then(() => storePromise)
+        .then(store => {
+          store?.dispose()
         })
         .catch(() => {
           // ignore

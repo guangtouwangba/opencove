@@ -352,7 +352,7 @@ describe('PersistenceStore sort order migration', () => {
         [
           dbPath,
           createMockDbState({
-            userVersion: 6,
+            userVersion: 7,
             version2Schema: true,
             workspaceRows: [
               { id: 'ws-2', sortOrder: 0 },
@@ -391,7 +391,7 @@ describe('PersistenceStore sort order migration', () => {
         [
           dbPath,
           createMockDbState({
-            userVersion: 6,
+            userVersion: 7,
             workspaceRows: [
               { id: 'ws-2', sortOrder: 0 },
               { id: 'ws-4', sortOrder: 0 },

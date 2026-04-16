@@ -89,8 +89,10 @@ export function installBrowserOpenCoveApi(): void {
       isPackaged: false,
       allowWhatsNewInTests: false,
       enableTerminalDiagnostics: false,
+      enableTerminalInputDiagnostics: false,
       runtime: 'browser',
       platform: resolveBrowserPlatform(),
+      mainPid: null,
       windowsPty: null,
     },
     debug: {
@@ -192,6 +194,9 @@ export function installBrowserOpenCoveApi(): void {
     },
     persistence: {
       ...createBrowserPersistenceApi(),
+    },
+    lifecycle: {
+      onRequestPersistFlush: () => () => undefined,
     },
     sync: {
       onStateUpdated: listener => {
@@ -313,6 +318,7 @@ export function installBrowserOpenCoveApi(): void {
       kill: payload => ptyClient.kill(payload),
       attach: payload => ptyClient.attach(payload),
       detach: payload => ptyClient.detach(payload),
+      flushScrollbackMirrors: async () => undefined,
       snapshot: payload => ptyClient.snapshot(payload),
       debugCrashHost: () => ptyClient.debugCrashHost(),
       onData: listener => ptyClient.onData(listener),

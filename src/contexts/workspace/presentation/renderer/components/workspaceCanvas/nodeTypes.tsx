@@ -63,7 +63,12 @@ function TerminalNodeType({
       title={data.title}
       kind={data.kind}
       labelColor={labelColor}
+      agentLaunchMode={data.kind === 'agent' ? (data.agent?.launchMode ?? null) : null}
+      agentResumeSessionIdVerified={
+        data.kind === 'agent' ? data.agent?.resumeSessionIdVerified === true : false
+      }
       terminalProvider={resolvedTerminalProvider}
+      isLiveSessionReattach={data.isLiveSessionReattach === true}
       terminalThemeMode="sync-with-ui"
       isSelected={selected === true}
       isDragging={dragging === true}

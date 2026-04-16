@@ -4,7 +4,6 @@ import type { StandardWindowSizeBucket } from '@contexts/settings/domain/agentSe
 import type { Node, ReactFlowInstance } from '@xyflow/react'
 import { resolveSpaceWorkingDirectory } from '@contexts/space/application/resolveSpaceWorkingDirectory'
 import type { TerminalNodeData, WorkspaceSpaceRect, WorkspaceSpaceState } from '../../../types'
-import type { ListMountsResult } from '@shared/contracts/dto'
 import type {
   ContextMenuState,
   EmptySelectionPromptState,
@@ -14,6 +13,7 @@ import type {
 import { sanitizeSpaces, validateSpaceTransfer } from '../helpers'
 import { resolveDefaultAgentWindowSize } from '../constants'
 import { resolveNodesPlacement } from './useNodesStore.resolvePlacement'
+import { createSpaceFromSelectedNodesWithMounts } from './useSpaces.createSpaceSelection'
 import {
   computeSpaceRectFromNodes,
   pushAwayLayout,
@@ -21,10 +21,6 @@ import {
   SPACE_MIN_SIZE,
   type LayoutItem,
 } from '../../../utils/spaceLayout'
-
-function isAbsolutePath(pathValue: string): boolean {
-  return /^([a-zA-Z]:[\\/]|\/)/.test(pathValue)
-}
 
 type SetNodes = (
   updater: (prevNodes: Node<TerminalNodeData>[]) => Node<TerminalNodeData>[],
@@ -374,117 +370,19 @@ export function useWorkspaceCanvasCreateSpace({
   )
 
   const createSpaceFromSelectedNodes = useCallback(() => {
-    const resolveSelectedIds = (): string[] => {
-      const selectedIdsRefValue = selectedNodeIdsRef.current
-      if (selectedIdsRefValue.length > 0) {
-        return selectedIdsRefValue
-      }
-
-      return reactFlow
-        .getNodes()
-        .filter(node => node.selected)
-        .map(node => node.id)
-    }
-
-    const commitSelectedNodes = (): boolean => {
-      const selectedIds = resolveSelectedIds()
-      if (selectedIds.length === 0) {
-        return false
-      }
-
-      void (async () => {
-        try {
-          let mountResult = await window.opencoveApi.controlSurface.invoke<ListMountsResult>({
-            kind: 'query',
-            id: 'mount.list',
-            payload: { projectId: workspaceId },
-          })
-
-          if (mountResult.mounts.length === 0) {
-            const rootPath = workspacePath.trim()
-            if (workspaceId.trim().length > 0 && rootPath.length > 0 && isAbsolutePath(rootPath)) {
-              try {
-                await window.opencoveApi.controlSurface.invoke({
-                  kind: 'command',
-                  id: 'mount.create',
-                  payload: {
-                    projectId: workspaceId,
-                    endpointId: 'local',
-                    rootPath,
-                    name: null,
-                  },
-                })
-                mountResult = await window.opencoveApi.controlSurface.invoke<ListMountsResult>({
-                  kind: 'query',
-                  id: 'mount.list',
-                  payload: { projectId: workspaceId },
-                })
-              } catch {
-                // ignore
-              }
-            }
-          }
-
-          if (mountResult.mounts.length === 0) {
-            onShowMessage?.(t('messages.projectHasNoMounts'), 'warning')
-            setContextMenu(null)
-            setEmptySelectionPrompt(null)
-            cancelSpaceRename()
-            return
-          }
-
-          if (mountResult.mounts.length === 1) {
-            const mount = mountResult.mounts[0]
-            createSpace({
-              nodeIds: selectedIds,
-              rect: null,
-              targetMountId: mount.mountId,
-              directoryPath: mount.rootPath,
-            })
-            return
-          }
-
-          setSpaceTargetMountPicker({
-            nodeIds: selectedIds,
-            rect: null,
-            mounts: mountResult.mounts,
-            selectedMountId: mountResult.mounts[0].mountId,
-          })
-          setContextMenu(null)
-          setEmptySelectionPrompt(null)
-          cancelSpaceRename()
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error)
-          onShowMessage?.(t('messages.mountListFailed', { message }), 'error')
-          setContextMenu(null)
-          setEmptySelectionPrompt(null)
-          cancelSpaceRename()
-        }
-      })()
-      return true
-    }
-
-    if (commitSelectedNodes()) {
-      return
-    }
-
-    let attemptsRemaining = 3
-
-    const retryCommitSelectedNodes = () => {
-      if (commitSelectedNodes()) {
-        return
-      }
-
-      attemptsRemaining -= 1
-      if (attemptsRemaining <= 0) {
-        setContextMenu(null)
-        return
-      }
-
-      window.requestAnimationFrame(retryCommitSelectedNodes)
-    }
-
-    window.requestAnimationFrame(retryCommitSelectedNodes)
+    createSpaceFromSelectedNodesWithMounts({
+      selectedNodeIdsRef,
+      reactFlow,
+      workspaceId,
+      workspacePath,
+      createSpace,
+      setContextMenu,
+      setEmptySelectionPrompt,
+      setSpaceTargetMountPicker,
+      cancelSpaceRename,
+      onShowMessage,
+      t,
+    })
   }, [
     cancelSpaceRename,
     createSpace,

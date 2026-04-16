@@ -20,6 +20,7 @@ import {
   createNoteNodeFromPaneContextMenu,
   createWebsiteNodeFromPaneContextMenu,
 } from './useInteractions.paneNodeCreation'
+import { useIgnoredPaneClick } from './useIgnoredPaneClick'
 import type { UseWorkspaceCanvasInteractionsParams } from './useInteractions.types'
 import { useWebsiteWindowOpenUrlNodeCreation } from './useWebsiteWindowOpenUrlNodeCreation'
 
@@ -145,14 +146,7 @@ export function useWorkspaceCanvasInteractions({
     [openSelectionContextMenu, selectedNodeIdsRef],
   )
 
-  const ignoreNextPaneClickRef = useRef(false)
-
-  const queueIgnoreNextPaneClick = useCallback(() => {
-    ignoreNextPaneClickRef.current = true
-    window.setTimeout(() => {
-      ignoreNextPaneClickRef.current = false
-    }, 0)
-  }, [])
+  const { ignoreNextPaneClickRef, queueIgnoreNextPaneClick } = useIgnoredPaneClick()
 
   const handlePaneContextMenu = useCallback(
     (event: React.MouseEvent | MouseEvent) => {
@@ -370,7 +364,7 @@ export function useWorkspaceCanvasInteractions({
       setEmptySelectionPrompt(null)
       cancelSpaceRename()
     },
-    [cancelSpaceRename, clearNodeSelection, setEmptySelectionPrompt],
+    [cancelSpaceRename, clearNodeSelection, ignoreNextPaneClickRef, setEmptySelectionPrompt],
   )
   const createTerminalNode = useWorkspaceCanvasTerminalCreation({
     contextMenu,

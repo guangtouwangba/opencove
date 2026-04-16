@@ -1,11 +1,14 @@
 import type { AgentProviderId } from '../../../../shared/contracts/dto'
+import type { NodeScriptLaunchCommand } from '../../../../shared/utils/nodeScriptCommand'
+import { resolveNodeScriptLaunch } from '../../../../shared/utils/nodeScriptCommand'
 
 export function resolveWorkerAgentTestStub(options: {
   provider: AgentProviderId
   cwd: string
   mode: 'new' | 'resume'
   model: string | null
-}): { command: string; args: string[] } | null {
+  resumeSessionId?: string | null
+}): NodeScriptLaunchCommand | null {
   if (process.env.NODE_ENV !== 'test') {
     return null
   }
@@ -20,18 +23,15 @@ export function resolveWorkerAgentTestStub(options: {
   const sessionScenario = process.env['OPENCOVE_TEST_AGENT_SESSION_SCENARIO']?.trim() ?? ''
   const stubScriptPath = process.env['OPENCOVE_TEST_AGENT_STUB_SCRIPT']?.trim() ?? ''
 
-  if (stubScriptPath.length > 0) {
-    return {
-      command: process.execPath,
-      args: [
-        stubScriptPath,
-        options.provider,
-        options.cwd,
-        options.mode,
-        options.model ?? 'default-model',
-        sessionScenario.length > 0 ? sessionScenario : 'default',
-      ],
-    }
+  if (sessionScenario.length > 0 && stubScriptPath.length > 0) {
+    return resolveNodeScriptLaunch(stubScriptPath, [
+      options.provider,
+      options.cwd,
+      options.mode,
+      options.model ?? 'default-model',
+      options.resumeSessionId ?? '',
+      sessionScenario,
+    ])
   }
 
   return {
@@ -42,15 +42,15 @@ export function resolveWorkerAgentTestStub(options: {
             '-NoLogo',
             '-NoProfile',
             '-Command',
-            `Write-Output "[opencove-test-agent] ${options.provider} ${options.mode} ${
-              options.model ?? 'default-model'
-            }"; Start-Sleep -Seconds 120`,
+            `Start-Sleep -Milliseconds 250; Write-Output "[opencove-test-agent] ${options.provider} ${
+              options.mode
+            } ${options.model ?? 'default-model'}"; Start-Sleep -Seconds 120`,
           ]
         : [
             '-lc',
-            `printf '%s\\n' "[opencove-test-agent] ${options.provider} ${options.mode} ${
-              options.model ?? 'default-model'
-            }"; sleep 120`,
+            `sleep 0.25; printf '%s\\n' "[opencove-test-agent] ${options.provider} ${
+              options.mode
+            } ${options.model ?? 'default-model'}"; sleep 120`,
           ],
   }
 }
