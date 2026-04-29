@@ -53,6 +53,8 @@ type TerminalSelectionTestApi = {
     deviceCanvasHeight: number | null
     cssCanvasWidth: number | null
     cssCanvasHeight: number | null
+    cssCellWidth: number | null
+    cssCellHeight: number | null
     baseY: number | null
     viewportY: number | null
     isUserScrolling: boolean | null
@@ -63,13 +65,13 @@ type TerminalSelectionTestApi = {
     instanceId: number | null
   } | null
   getSize: (nodeId: string) => { cols: number; rows: number } | null
+  getRegisteredNodeIds: () => string[]
+  getRuntimeSessionId: (nodeId: string) => string | null
   getViewportY: (nodeId: string) => number | null
   getCachedScreenStateSummary: (nodeId: string) => {
     sessionId: string
     serializedLength: number
-    rawSnapshotLength: number
     serializedHasFrameToken: boolean
-    rawSnapshotHasFrameToken: boolean
   } | null
   emitBinaryInput: (nodeId: string, data: string) => boolean
   getSelection: (nodeId: string) => string | null
@@ -85,6 +87,8 @@ declare global {
 }
 
 const terminalHandles = new Map<string, TerminalSelectionHandle>()
+const terminalBinaryInputEmitters = new Map<string, (data: string) => boolean>()
+const terminalRuntimeSessionIds = new Map<string, string>()
 
 function getTerminalSelectionTestApi(): TerminalSelectionTestApi | undefined {
   if (typeof window === 'undefined') {
@@ -184,6 +188,7 @@ function getTerminalSelectionTestApi(): TerminalSelectionTestApi | undefined {
         const effectiveDpr = terminal?._core?._coreBrowserService?.dpr
         const deviceCanvas = dimensions.device?.canvas
         const cssCanvas = dimensions.css?.canvas
+        const cssCell = dimensions.css?.cell
         const baseY = (terminal as unknown as { buffer?: { active?: { baseY?: unknown } } })?.buffer
           ?.active?.baseY
         const viewportY = (terminal as unknown as { buffer?: { active?: { viewportY?: unknown } } })
@@ -211,6 +216,14 @@ function getTerminalSelectionTestApi(): TerminalSelectionTestApi | undefined {
           cssCanvasHeight:
             typeof cssCanvas?.height === 'number' && Number.isFinite(cssCanvas.height)
               ? cssCanvas.height
+              : null,
+          cssCellWidth:
+            typeof cssCell?.width === 'number' && Number.isFinite(cssCell.width)
+              ? cssCell.width
+              : null,
+          cssCellHeight:
+            typeof cssCell?.height === 'number' && Number.isFinite(cssCell.height)
+              ? cssCell.height
               : null,
           baseY: typeof baseY === 'number' && Number.isFinite(baseY) ? baseY : null,
           viewportY: typeof viewportY === 'number' && Number.isFinite(viewportY) ? viewportY : null,
@@ -243,6 +256,8 @@ function getTerminalSelectionTestApi(): TerminalSelectionTestApi | undefined {
           rows: terminal.rows,
         }
       },
+      getRegisteredNodeIds: () => [...terminalHandles.keys()],
+      getRuntimeSessionId: nodeId => terminalRuntimeSessionIds.get(nodeId) ?? null,
       getViewportY: nodeId => {
         const terminal = terminalHandles.get(nodeId) as unknown as {
           buffer?: { active?: { viewportY?: unknown } }
@@ -259,13 +274,17 @@ function getTerminalSelectionTestApi(): TerminalSelectionTestApi | undefined {
         return {
           sessionId: cached.sessionId,
           serializedLength: cached.serialized.length,
-          rawSnapshotLength: cached.rawSnapshot.length,
           serializedHasFrameToken: cached.serialized.includes('FRAME_29999_TOKEN'),
-          rawSnapshotHasFrameToken: cached.rawSnapshot.includes('FRAME_29999_TOKEN'),
         }
       },
       emitBinaryInput: (nodeId, data) => {
+        const testEmitter = terminalBinaryInputEmitters.get(nodeId)
+        if (testEmitter) {
+          return testEmitter(data)
+        }
+
         const terminal = terminalHandles.get(nodeId) as unknown as {
+          element?: HTMLElement | null
           _core?: { coreService?: { triggerBinaryEvent?: (payload: string) => void } }
         }
         const coreService = terminal?._core?.coreService
@@ -273,6 +292,13 @@ function getTerminalSelectionTestApi(): TerminalSelectionTestApi | undefined {
           return false
         }
 
+        const interactionTarget = terminal.element?.parentElement ?? terminal.element ?? null
+        interactionTarget?.dispatchEvent(
+          new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+          }),
+        )
         coreService.triggerBinaryEvent(data)
         return true
       },
@@ -315,5 +341,65 @@ export function registerTerminalSelectionTestHandle(
 
   return () => {
     terminalHandles.delete(nodeId)
+  }
+}
+
+export function registerTerminalBinaryInputTestHandle(
+  nodeId: string,
+  emitBinaryInput: (data: string) => boolean,
+): () => void {
+  if (typeof window === 'undefined') {
+    return () => undefined
+  }
+
+  getTerminalSelectionTestApi()
+  terminalBinaryInputEmitters.set(nodeId, emitBinaryInput)
+
+  return () => {
+    if (terminalBinaryInputEmitters.get(nodeId) === emitBinaryInput) {
+      terminalBinaryInputEmitters.delete(nodeId)
+    }
+  }
+}
+
+export function registerTerminalRuntimeSessionTestHandle(
+  nodeId: string,
+  sessionId: string,
+): () => void {
+  if (typeof window === 'undefined') {
+    return () => undefined
+  }
+
+  getTerminalSelectionTestApi()
+  terminalRuntimeSessionIds.set(nodeId, sessionId)
+
+  return () => {
+    if (terminalRuntimeSessionIds.get(nodeId) === sessionId) {
+      terminalRuntimeSessionIds.delete(nodeId)
+    }
+  }
+}
+
+export function registerTerminalRuntimeTestHandles({
+  enabled,
+  nodeId,
+  sessionId,
+  emitBinaryInput,
+}: {
+  enabled: boolean
+  nodeId: string
+  sessionId: string
+  emitBinaryInput: (data: string) => boolean
+}): () => void {
+  if (!enabled) {
+    return () => undefined
+  }
+
+  const disposeBinaryInput = registerTerminalBinaryInputTestHandle(nodeId, emitBinaryInput)
+  const disposeRuntimeSession = registerTerminalRuntimeSessionTestHandle(nodeId, sessionId)
+
+  return () => {
+    disposeBinaryInput()
+    disposeRuntimeSession()
   }
 }

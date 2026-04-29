@@ -224,6 +224,8 @@ export function registerPtyMountHandlers(
           cwd,
           command,
           args,
+          cols,
+          rows,
         })
 
         return {
@@ -276,6 +278,8 @@ export function registerPtyMountHandlers(
         cwd,
         command: payload.command ?? shell ?? 'shell',
         args: payload.command ? (payload.args ?? []) : [],
+        cols,
+        rows,
       })
 
       return {

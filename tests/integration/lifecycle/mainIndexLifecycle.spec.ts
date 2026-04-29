@@ -105,6 +105,22 @@ describe('main process lifecycle', () => {
       stopOwnedLocalWorker: vi.fn(async () => true),
     }))
 
+    vi.doMock('../../../src/app/main/worker/resolveHomeWorkerEndpoint', () => ({
+      resolveHomeWorkerEndpoint: vi.fn(async () => ({
+        effectiveMode: 'local',
+        config: null,
+        diagnostics: [],
+      })),
+    }))
+
+    vi.doMock('../../../src/app/main/worker/homeWorkerEndpointResolver', () => ({
+      createHomeWorkerEndpointResolver: vi.fn(() => async () => ({
+        hostname: '127.0.0.1',
+        port: 43123,
+        token: 'test-token',
+      })),
+    }))
+
     await import('../../../src/app/main/index')
     await Promise.resolve()
 
