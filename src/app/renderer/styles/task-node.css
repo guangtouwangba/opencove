@@ -13,7 +13,6 @@
   height: 34px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   padding: 0 10px;
   background: var(--cove-node-header-surface);
@@ -39,6 +38,12 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
+}
+
+.task-node__header-drag-surface {
+  flex: 0 0 48px;
+  width: 48px;
+  min-height: 100%;
 }
 
 .task-node--enriching .task-node__header-main {
@@ -89,38 +94,6 @@
   border: 0;
 }
 
-.task-node__title-button {
-  border: none;
-  background: transparent;
-  text-align: left;
-  width: fit-content;
-  max-width: 100%;
-  cursor: text;
-  padding: 0;
-}
-
-.task-node__title-button:hover {
-  color: var(--cove-text);
-}
-
-.task-node__title-input {
-  flex: 1;
-  min-width: 0;
-  width: auto;
-  border: none;
-  background: transparent;
-  color: var(--cove-text);
-  border-radius: 0;
-  padding: 0;
-  font-size: calc(12px * var(--cove-ui-font-scale));
-  font-family: inherit;
-}
-
-.task-node__title-input:focus {
-  outline: none;
-  box-shadow: none;
-}
-
 .task-node__timestamps {
   display: inline-flex;
   flex-wrap: wrap;
@@ -130,12 +103,14 @@
 }
 
 .task-node__header-actions {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
 .task-node__icon-button {
+  flex: 0 0 auto;
   width: 24px;
   height: 24px;
   display: inline-flex;

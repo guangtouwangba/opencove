@@ -24,7 +24,6 @@
   height: 34px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   padding: 0 10px;
   background: var(--cove-terminal-node-header-surface);
@@ -42,6 +41,13 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.terminal-node__header-drag-surface {
+  flex: 0 0 48px;
+  width: 48px;
+  min-height: 100%;
+  pointer-events: none;
 }
 
 .terminal-node__close {
@@ -301,66 +307,8 @@
   cursor: nwse-resize;
 }
 
-.terminal-node__title-button {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  text-align: left;
-  cursor: text;
-  font: inherit;
-}
-
-.terminal-node__title-button:hover {
-  color: var(--cove-text);
-}
-
-.terminal-node__title-editable {
-  flex: 1;
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-}
-
-.terminal-node__title-prefix {
-  flex: 0 0 auto;
-  font-size: calc(12px * var(--cove-ui-font-scale));
-  color: var(--cove-text);
-  white-space: nowrap;
-}
-
-.terminal-node__title-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  border-radius: 0;
-  padding: 0;
-  min-width: 0;
-  font-family: inherit;
-  font-size: calc(12px * var(--cove-ui-font-scale));
-  color: var(--cove-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.terminal-node__title-proxy {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.terminal-node__title-input:focus {
-  outline: none;
-}
-
 .terminal-node__header-badges {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -421,6 +369,7 @@
 }
 
 .terminal-node__action {
+  flex: 0 0 auto;
   border: 1px solid var(--cove-border-subtle);
   background: var(--cove-field);
   color: var(--cove-text);
