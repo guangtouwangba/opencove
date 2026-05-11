@@ -18,13 +18,12 @@ import { useWorkspaceCanvasGlobalDismissals } from './hooks/useGlobalDismissals'
 import { useWorkspaceCanvasSpaceMenuState } from './hooks/useCanvasSpaceMenuState'
 import { useWorkspaceCanvasLabelColorFilter } from './hooks/useLabelColorFilter'
 import { useViewportDprSnapping } from './hooks/useViewportDprSnapping'
+import { WorkspaceCanvasMenus } from './view/WorkspaceCanvasMenus'
 import { WorkspaceCanvasWindows } from './view/WorkspaceCanvasWindows'
-import { WorkspaceContextMenu } from './view/WorkspaceContextMenu'
 import { WorkspaceMinimapDock } from './view/WorkspaceMinimapDock'
 import { WorkspaceSelectionDraftOverlay } from './view/WorkspaceSelectionDraftOverlay'
 import { WorkspaceSnapGuidesOverlay } from './view/WorkspaceSnapGuidesOverlay'
 import { WorkspaceCanvasTopOverlays } from './view/WorkspaceCanvasTopOverlays'
-import { WorkspaceSpaceActionMenu } from './view/WorkspaceSpaceActionMenu'
 import { WorkspaceSpaceExplorerOverlay } from './view/WorkspaceSpaceExplorerOverlay'
 import { WorkspaceSpaceQuickPreview } from './view/WorkspaceSpaceQuickPreview'
 import { WorkspaceSpaceRegionsOverlay } from './view/WorkspaceSpaceRegionsOverlay'
@@ -111,8 +110,13 @@ export function WorkspaceCanvasView({
   arrangeCanvas,
   arrangeInSpace,
   openTaskCreator,
+  openRoleCreator,
   openAgentLauncher,
   openAgentLauncherForProvider,
+  projectRoles,
+  runProjectRoleFromContextMenu,
+  openRoleEditor,
+  deleteProjectRole,
   runQuickCommand,
   insertQuickPhrase,
   openQuickMenuSettings,
@@ -135,6 +139,10 @@ export function WorkspaceCanvasView({
   closeTaskCreator,
   generateTaskTitle,
   createTask,
+  roleCreator,
+  setRoleCreator,
+  closeRoleCreator,
+  createRole,
   taskEditor,
   setTaskEditor,
   closeTaskEditor,
@@ -391,20 +399,20 @@ export function WorkspaceCanvasView({
         }}
         selectedNodeCount={selectedNodeCount}
       />
-      <WorkspaceContextMenu
+      <WorkspaceCanvasMenus
         contextMenu={contextMenu}
         closeContextMenu={closeContextMenu}
         createTerminalNode={createTerminalNode}
         createNoteNodeFromContextMenu={createNoteNodeFromContextMenu}
         createWebsiteNodeFromContextMenu={createWebsiteNodeFromContextMenu}
-        websiteWindowsEnabled={agentSettings.websiteWindowPolicy.enabled}
         openTaskCreator={openTaskCreator}
+        openRoleCreator={openRoleCreator}
         openAgentLauncher={openAgentLauncher}
-        agentProviderOrder={agentSettings.agentProviderOrder}
-        agentExecutablePathOverrideByProvider={agentSettings.agentExecutablePathOverrideByProvider}
         openAgentLauncherForProvider={openAgentLauncherForProvider}
-        quickCommands={agentSettings.quickCommands}
-        quickPhrases={agentSettings.quickPhrases}
+        projectRoles={projectRoles}
+        runProjectRoleFromContextMenu={runProjectRoleFromContextMenu}
+        openRoleEditor={openRoleEditor}
+        deleteProjectRole={deleteProjectRole}
         runQuickCommand={runQuickCommand}
         insertQuickPhrase={insertQuickPhrase}
         openQuickMenuSettings={openQuickMenuSettings}
@@ -413,6 +421,7 @@ export function WorkspaceCanvasView({
         onToggleMagneticSnapping={onToggleMagneticSnapping}
         canArrangeAll={canArrangeAll}
         canArrangeCanvas={canArrangeCanvas}
+        canArrangeActiveSpace={canArrangeActiveSpace}
         arrangeAll={arrangeAll}
         arrangeCanvas={arrangeCanvas}
         arrangeInSpace={arrangeInSpace}
@@ -423,36 +432,17 @@ export function WorkspaceCanvasView({
         isConvertSelectedNoteToTaskDisabled={isConvertSelectedNoteToTaskDisabled}
         convertSelectedNoteToTask={convertSelectedNoteToTask}
         setSelectedNodeLabelColorOverride={setSelectedNodeLabelColorOverride}
-      />
-      <WorkspaceSpaceActionMenu
-        menu={spaceActionMenu}
-        availableOpeners={availablePathOpeners}
-        canArrange={canArrangeActiveSpace}
-        canCreateWorktree={activeMenuSpace !== null && isActiveMenuSpaceOnWorkspaceRoot}
-        canArchive={activeMenuSpace !== null}
-        closeMenu={closeSpaceActionMenu}
+        spaceActionMenu={spaceActionMenu}
+        availablePathOpeners={availablePathOpeners}
+        activeMenuSpace={activeMenuSpace}
+        isActiveMenuSpaceOnWorkspaceRoot={isActiveMenuSpaceOnWorkspaceRoot}
+        closeSpaceActionMenu={closeSpaceActionMenu}
         setSpaceLabelColor={setSpaceLabelColor}
-        onArrange={arrangeInSpace}
-        onCreateWorktree={() => {
-          if (activeMenuSpace) {
-            openSpaceCreateWorktree(activeMenuSpace.id)
-          }
-        }}
-        onArchive={() => {
-          if (activeMenuSpace) {
-            openSpaceArchive(activeMenuSpace.id)
-          }
-        }}
-        onCopyPath={() => {
-          if (activeMenuSpace) {
-            return copySpacePath(activeMenuSpace.id)
-          }
-        }}
-        onOpenPath={openerId => {
-          if (activeMenuSpace) {
-            return openSpacePath(activeMenuSpace.id, openerId)
-          }
-        }}
+        openSpaceCreateWorktree={openSpaceCreateWorktree}
+        openSpaceArchive={openSpaceArchive}
+        copySpacePath={copySpacePath}
+        openSpacePath={openSpacePath}
+        agentSettings={agentSettings}
       />
       <WorkspaceCanvasWindows
         taskCreator={taskCreator}
@@ -463,6 +453,10 @@ export function WorkspaceCanvasView({
         closeTaskCreator={closeTaskCreator}
         generateTaskTitle={generateTaskTitle}
         createTask={createTask}
+        roleCreator={roleCreator}
+        setRoleCreator={setRoleCreator}
+        closeRoleCreator={closeRoleCreator}
+        createRole={createRole}
         taskEditor={taskEditor}
         setTaskEditor={setTaskEditor}
         closeTaskEditor={closeTaskEditor}

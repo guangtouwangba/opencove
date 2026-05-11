@@ -7,6 +7,7 @@ import { enWorktree } from './en.worktree'
 import { enWebsiteNode } from './en.websiteNode'
 import { enIssueReport } from './en.issueReport'
 import { enPerformanceMonitor } from './en.performanceMonitor'
+import { enRole } from './en.role'
 
 export const en = {
   common: {
@@ -15,7 +16,9 @@ export const en = {
     close: 'Close',
     confirm: 'Confirm',
     create: 'Create',
+    creating: 'Creating...',
     delete: 'Delete',
+    edit: 'Edit',
     error: 'Error',
     generateByAi: 'Generate by AI',
     generating: 'Generating...',
@@ -380,7 +383,10 @@ export const en = {
     newNote: 'New Note',
     newWebsite: 'New Website',
     newTask: 'New Task',
+    newRole: 'New Role',
     runAgent: 'Run Agent',
+    runRole: 'Run Role',
+    noProjectRoles: 'No roles in this project',
     createEmptySpace: 'Create Empty Space',
     arrange: 'Arrange',
     arrangeBy: 'Arrange By',
@@ -470,6 +476,7 @@ export const en = {
     advanced: 'Advanced',
     hideAdvanced: 'Hide Advanced',
   },
+  ...enRole,
   taskPromptTemplates: {
     openMenu: 'Prompt templates',
     globalSection: 'Global Templates',

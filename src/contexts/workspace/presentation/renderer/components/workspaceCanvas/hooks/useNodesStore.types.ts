@@ -1,11 +1,16 @@
 import type { Node } from '@xyflow/react'
-import type { StandardWindowSizeBucket } from '@contexts/settings/domain/agentSettings'
+import type {
+  AgentProvider,
+  StandardWindowSizeBucket,
+} from '@contexts/settings/domain/agentSettings'
+import type { ProjectRoleDefinition } from '@contexts/settings/domain/projectRoles'
 import type { WebsiteWindowSessionMode } from '@shared/contracts/dto'
 import type {
   DocumentNodeData,
   ImageNodeData,
   NodeFrame,
   Point,
+  RoleNodeData,
   Size,
   TerminalNodeData,
   TaskPriority,
@@ -34,6 +39,16 @@ export interface UseWorkspaceCanvasNodesStoreParams {
   onRequestPersistFlush?: () => void
   onShowMessage?: ShowWorkspaceCanvasMessage
   onNodeCreated?: (nodeId: string) => void
+  standardWindowSizeBucket: StandardWindowSizeBucket
+}
+
+export interface UseWorkspaceCanvasNodeCreationParams {
+  nodesRef: React.MutableRefObject<Node<TerminalNodeData>[]>
+  spacesRef: React.MutableRefObject<WorkspaceSpaceState[]>
+  onRequestPersistFlush?: () => void
+  onShowMessage?: ShowWorkspaceCanvasMessage
+  onNodeCreated?: (nodeId: string) => void
+  setNodes: UseWorkspaceCanvasNodesStoreResult['setNodes']
   standardWindowSizeBucket: StandardWindowSizeBucket
 }
 
@@ -77,6 +92,19 @@ export interface UseWorkspaceCanvasNodesStoreResult {
     tags: string[],
     placement?: NodePlacementOptions,
   ) => Node<TerminalNodeData> | null
+  createRoleNode: (
+    anchor: Point,
+    role: ProjectRoleDefinition,
+    placement?: NodePlacementOptions & { selectedProvider?: AgentProvider | null },
+  ) => Node<TerminalNodeData> | null
+  updateRoleProvider: (nodeId: string, provider: AgentProvider) => void
+  updateRoleInput: (nodeId: string, input: string) => void
+  appendRoleRunRecord: (
+    nodeId: string,
+    next: Pick<RoleNodeData, 'linkedAgentNodeId'> & {
+      record: RoleNodeData['runHistory'][number]
+    },
+  ) => void
   createImageNode: (
     anchor: Point,
     image: ImageNodeData,

@@ -29,6 +29,12 @@ export function resolveDefaultNoteWindowSize(
   return resolveCanonicalNodeSize({ kind: 'note', bucket })
 }
 
+export function resolveDefaultRoleWindowSize(
+  bucket: StandardWindowSizeBucket = DEFAULT_AGENT_SETTINGS.standardWindowSizeBucket,
+): Size {
+  return resolveCanonicalNodeSize({ kind: 'role', bucket })
+}
+
 export function resolveDefaultImageWindowSize(viewport?: Partial<Size>): Size {
   const bucket = resolveCanvasCanonicalBucketFromViewport(viewport)
   return resolveCanonicalNodeSize({ kind: 'image', bucket })

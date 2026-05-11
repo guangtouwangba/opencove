@@ -1,49 +1,122 @@
 import { useMemo } from 'react'
 import { MarkerType, type Edge, type Node } from '@xyflow/react'
+import { useTranslation } from '@app/renderer/i18n'
 import type { TerminalNodeData } from '../../../types'
 import { isAgentWorking } from '../helpers'
 
-export function useWorkspaceCanvasTaskAgentEdges(nodes: Node<TerminalNodeData>[]): Edge[] {
-  return useMemo(() => {
-    const nodeById = new Map(nodes.map(node => [node.id, node]))
+export function resolveWorkspaceCanvasAgentEdges({
+  nodes,
+  formatRoleEdgeLabel,
+}: {
+  nodes: Node<TerminalNodeData>[]
+  formatRoleEdgeLabel: (roleName: string) => string
+}): Edge[] {
+  const nodeById = new Map(nodes.map(node => [node.id, node]))
+  const taskEdges = nodes
+    .filter(node => node.data.kind === 'task' && node.data.task?.linkedAgentNodeId)
+    .flatMap(taskNode => {
+      const linkedAgentNodeId = taskNode.data.task?.linkedAgentNodeId
+      if (!linkedAgentNodeId) {
+        return []
+      }
 
-    return nodes
-      .filter(node => node.data.kind === 'task' && node.data.task?.linkedAgentNodeId)
-      .flatMap(taskNode => {
-        const linkedAgentNodeId = taskNode.data.task?.linkedAgentNodeId
-        if (!linkedAgentNodeId) {
-          return []
-        }
+      const linkedAgentNode = nodeById.get(linkedAgentNodeId)
+      if (!linkedAgentNode || linkedAgentNode.data.kind !== 'agent') {
+        return []
+      }
 
-        const linkedAgentNode = nodeById.get(linkedAgentNodeId)
-        if (!linkedAgentNode || linkedAgentNode.data.kind !== 'agent') {
-          return []
-        }
+      const isActive = isAgentWorking(linkedAgentNode.data.status)
+      const edgeClassName = isActive
+        ? 'workspace-task-agent-edge workspace-task-agent-edge--active'
+        : 'workspace-task-agent-edge workspace-task-agent-edge--idle'
+      const markerColor = isActive ? 'rgba(121, 197, 255, 0.95)' : 'rgba(130, 168, 214, 0.78)'
 
-        const isActive = isAgentWorking(linkedAgentNode.data.status)
-        const edgeClassName = isActive
-          ? 'workspace-task-agent-edge workspace-task-agent-edge--active'
-          : 'workspace-task-agent-edge workspace-task-agent-edge--idle'
-        const markerColor = isActive ? 'rgba(121, 197, 255, 0.95)' : 'rgba(130, 168, 214, 0.78)'
-
-        return [
-          {
-            id: `task-link-${taskNode.id}-${linkedAgentNode.id}`,
-            source: taskNode.id,
-            target: linkedAgentNode.id,
-            type: 'default',
-            animated: isActive,
-            className: edgeClassName,
-            selectable: false,
-            focusable: false,
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              color: markerColor,
-              width: 22,
-              height: 22,
-            },
+      return [
+        {
+          id: `task-link-${taskNode.id}-${linkedAgentNode.id}`,
+          source: taskNode.id,
+          target: linkedAgentNode.id,
+          type: 'default',
+          animated: isActive,
+          className: edgeClassName,
+          selectable: false,
+          focusable: false,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: markerColor,
+            width: 22,
+            height: 22,
           },
-        ]
-      })
-  }, [nodes])
+        },
+      ]
+    })
+
+  const roleEdges = nodes
+    .filter(node => node.data.kind === 'role' && node.data.role)
+    .flatMap(roleNode => {
+      const linkedAgentNodeId =
+        roleNode.data.role?.linkedAgentNodeId ??
+        roleNode.data.role?.runHistory.find(record => record.agentNodeId)?.agentNodeId ??
+        null
+      if (!linkedAgentNodeId) {
+        return []
+      }
+
+      const linkedAgentNode = nodeById.get(linkedAgentNodeId)
+      if (!linkedAgentNode || linkedAgentNode.data.kind !== 'agent') {
+        return []
+      }
+
+      const isActive = isAgentWorking(linkedAgentNode.data.status)
+      const edgeClassName = isActive
+        ? 'workspace-role-agent-edge workspace-role-agent-edge--active'
+        : 'workspace-role-agent-edge workspace-role-agent-edge--idle'
+      const markerColor = isActive ? 'rgba(110, 216, 177, 0.95)' : 'rgba(120, 180, 160, 0.78)'
+      const roleName = roleNode.data.role?.roleName ?? roleNode.data.title
+
+      return [
+        {
+          id: `role-link-${roleNode.id}-${linkedAgentNode.id}`,
+          source: roleNode.id,
+          target: linkedAgentNode.id,
+          type: 'default',
+          animated: isActive,
+          className: edgeClassName,
+          selectable: false,
+          focusable: false,
+          label: formatRoleEdgeLabel(roleName),
+          labelStyle: {
+            fill: 'var(--cove-text)',
+            fontSize: 11,
+            fontWeight: 600,
+          },
+          labelBgPadding: [6, 4] as [number, number],
+          labelBgBorderRadius: 5,
+          labelBgStyle: {
+            fill: 'var(--cove-surface-strong)',
+            fillOpacity: 0.92,
+            stroke: 'rgba(120, 180, 160, 0.35)',
+          },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: markerColor,
+            width: 22,
+            height: 22,
+          },
+        },
+      ]
+    })
+
+  return [...taskEdges, ...roleEdges]
+}
+
+export function useWorkspaceCanvasTaskAgentEdges(nodes: Node<TerminalNodeData>[]): Edge[] {
+  const { t } = useTranslation()
+
+  return useMemo(() => {
+    return resolveWorkspaceCanvasAgentEdges({
+      nodes,
+      formatRoleEdgeLabel: roleName => t('roleNode.edgeLabel', { role: roleName }),
+    })
+  }, [nodes, t])
 }

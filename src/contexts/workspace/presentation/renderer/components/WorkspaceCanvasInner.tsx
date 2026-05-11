@@ -183,20 +183,10 @@ export function WorkspaceCanvasInner({
     closeNode: nodeStore.closeNode,
     actionRefs,
   })
-  const inputMode = workspaceCanvasHooks.useWorkspaceCanvasInputMode({
-    canvasInputModeSetting: agentSettings.canvasInputMode,
-    canvasWheelBehaviorSetting: agentSettings.canvasWheelBehavior,
-    canvasWheelZoomModifierSetting: agentSettings.canvasWheelZoomModifier,
-    detectedCanvasInputMode: canvasState.detectedCanvasInputMode,
-    inputModalityStateRef: canvasState.inputModalityStateRef,
-    setDetectedCanvasInputMode: canvasState.setDetectedCanvasInputMode,
-    canvasRef: canvasState.canvasRef,
-    trackpadGestureLockRef: canvasState.trackpadGestureLockRef,
-    setIsCanvasWheelGestureCaptureActive: canvasState.setIsCanvasWheelGestureCaptureActive,
-    viewportRef: canvasState.viewportRef,
-    reactFlow,
-    onViewportChange,
-  })
+  // prettier-ignore
+  const roleUiProps = workspaceCanvasHooks.useWorkspaceCanvasRoleUi({ workspaceId, workspacePath, environmentVariables, agentSettings, canvasState, nodeStore, agentSupport, onSpacesChange, onRequestPersistFlush, onShowMessage, actionRefs })
+  // prettier-ignore
+  const inputMode = workspaceCanvasHooks.useWorkspaceCanvasInputMode({ canvasInputModeSetting: agentSettings.canvasInputMode, canvasWheelBehaviorSetting: agentSettings.canvasWheelBehavior, canvasWheelZoomModifierSetting: agentSettings.canvasWheelZoomModifier, detectedCanvasInputMode: canvasState.detectedCanvasInputMode, inputModalityStateRef: canvasState.inputModalityStateRef, setDetectedCanvasInputMode: canvasState.setDetectedCanvasInputMode, canvasRef: canvasState.canvasRef, trackpadGestureLockRef: canvasState.trackpadGestureLockRef, setIsCanvasWheelGestureCaptureActive: canvasState.setIsCanvasWheelGestureCaptureActive, viewportRef: canvasState.viewportRef, reactFlow, onViewportChange })
   // prettier-ignore
   workspaceCanvasHooks.useWorkspaceCanvasLifecycleBindings({ workspaceId, persistedMinimapVisible, canvasState, cancelSpaceRename: spacesApi.cancelSpaceRename, reactFlow, viewport, agentSettings, focusSpaceId, focusNodeId, focusSequence, spaces, focusSpaceInViewport: spacesApi.focusSpaceInViewport, nodes: canvasState.flowNodes, isFocusNodeTargetZoomPreviewing, nodesRef: nodeStore.nodesRef, requestNodeDeleteRef: actionRefs.requestNodeDeleteRef })
   const nodeTypes = workspaceCanvasHooks.useWorkspaceCanvasComposedNodeTypes({
@@ -496,6 +486,7 @@ export function WorkspaceCanvasInner({
       updateSpaceDirectory={updateSpaceDirectory}
       getSpaceBlockingNodes={getSpaceBlockingNodes}
       closeNodesById={closeNodesById}
+      {...roleUiProps}
     />
   )
 }

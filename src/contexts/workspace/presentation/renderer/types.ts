@@ -17,6 +17,7 @@ export type WorkspaceNodeKind =
   | 'agent'
   | 'task'
   | 'note'
+  | 'role'
   | 'image'
   | 'document'
   | 'website'
@@ -80,6 +81,32 @@ export interface NoteNodeData {
   text: string
 }
 
+export interface RoleRunRecord {
+  id: string
+  input: string
+  prompt: string
+  outputFormat: string
+  provider: AgentProvider | null
+  agentNodeId: string | null
+  sessionId: string | null
+  createdAt: string
+}
+
+export interface RoleNodeData {
+  roleId: string
+  roleName: string
+  roleDescription: string
+  promptTemplate: string
+  inputHint: string
+  outputFormat: string
+  input: string
+  selectedProvider: AgentProvider | null
+  linkedAgentNodeId: string | null
+  runHistory: RoleRunRecord[]
+  createdAt: string | null
+  updatedAt: string | null
+}
+
 export interface ImageNodeData {
   assetId: string
   mimeType: CanvasImageMimeType
@@ -124,6 +151,7 @@ export interface TerminalNodeData {
   agent: AgentNodeData | null
   task: TaskNodeData | null
   note: NoteNodeData | null
+  role?: RoleNodeData | null
   image: ImageNodeData | null
   document: DocumentNodeData | null
   website: WebsiteNodeData | null
@@ -293,7 +321,14 @@ export interface PersistedTerminalNode {
   executionDirectory?: string | null
   expectedDirectory?: string | null
   agent: AgentNodeData | null
-  task: TaskNodeData | NoteNodeData | ImageNodeData | DocumentNodeData | WebsiteNodeData | null
+  task:
+    | TaskNodeData
+    | NoteNodeData
+    | RoleNodeData
+    | ImageNodeData
+    | DocumentNodeData
+    | WebsiteNodeData
+    | null
 }
 
 export interface PersistedAppState {

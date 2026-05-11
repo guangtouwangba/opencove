@@ -18,6 +18,7 @@ import { removeNodeWithRelations } from './useNodesStore.closeNode'
 import { resolveWorkspaceLayoutAfterNodeResize } from './useNodesStore.resolveResizeLayout'
 import { useWorkspaceCanvasNodeCreation } from './useNodesStore.createNodes'
 import { useWorkspaceCanvasNoteNodeMutations } from './useNodesStore.noteMutations'
+import { useWorkspaceCanvasRoleNodeMutations } from './useNodesStore.roleMutations'
 import { useWorkspaceCanvasWebsiteNodeMutations } from './useNodesStore.websiteMutations'
 import { resolveRenamedWorkspaceNodeTitle, shouldRenameWorkspaceNode } from './useNodesStore.title'
 import type {
@@ -373,6 +374,11 @@ export function useWorkspaceCanvasNodesStore({
     setNodes,
     onRequestPersistFlush,
   })
+  const { updateRoleProvider, updateRoleInput, appendRoleRunRecord } =
+    useWorkspaceCanvasRoleNodeMutations({
+      setNodes,
+      onRequestPersistFlush,
+    })
   const { updateWebsiteUrl, setWebsitePinned, setWebsiteSession } =
     useWorkspaceCanvasWebsiteNodeMutations({ setNodes, onRequestPersistFlush })
 
@@ -417,10 +423,12 @@ export function useWorkspaceCanvasNodesStore({
     },
     [onRequestPersistFlush, setNodes],
   )
+
   const {
     createNodeForSession,
     createNoteNode,
     createTaskNode,
+    createRoleNode,
     createImageNode,
     createDocumentNode,
     createWebsiteNode,
@@ -459,6 +467,10 @@ export function useWorkspaceCanvasNodesStore({
     createNodeForSession,
     createNoteNode,
     createTaskNode,
+    createRoleNode,
+    updateRoleProvider,
+    updateRoleInput,
+    appendRoleRunRecord,
     createImageNode,
     createDocumentNode,
     createWebsiteNode,

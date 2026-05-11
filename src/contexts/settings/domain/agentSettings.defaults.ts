@@ -38,6 +38,7 @@ export const DEFAULT_AGENT_SETTINGS: AgentSettings = {
   taskTagOptions: ['feature', 'bug', 'refactor', 'docs', 'test'],
   taskPromptTemplates: [],
   taskPromptTemplatesByWorkspaceId: {},
+  projectRolesByWorkspaceId: {},
   quickCommands: [],
   quickPhrases: [],
   agentEnvByProvider: DEFAULT_AGENT_ENV_BY_PROVIDER,

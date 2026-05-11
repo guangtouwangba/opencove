@@ -1,0 +1,252 @@
+.role-node {
+  display: flex;
+  flex-direction: column;
+  min-width: 320px;
+  min-height: 300px;
+  overflow: hidden;
+  border: 1px solid var(--cove-border-subtle);
+  border-radius: 8px;
+  background: var(--cove-window-surface);
+  color: var(--cove-text);
+  box-shadow: 0 18px 40px var(--cove-shadow-color-elevated);
+}
+
+.role-node__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 10px 10px 8px 12px;
+  border-bottom: 1px solid var(--cove-border-subtle);
+  cursor: grab;
+}
+
+.role-node__icon {
+  width: 18px;
+  height: 18px;
+  color: var(--cove-text-muted);
+  flex: 0 0 auto;
+}
+
+.role-node__title-stack {
+  min-width: 0;
+  flex: 1;
+}
+
+.role-node__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.role-node__meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+  color: var(--cove-text-muted);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.role-node__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cove-text-muted);
+  cursor: pointer;
+}
+
+.role-node__icon-button:hover {
+  background: var(--cove-surface-hover);
+  color: var(--cove-text);
+}
+
+.role-node__icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.role-node__description {
+  margin: 0;
+  padding: 10px 12px 0;
+  color: var(--cove-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.role-node__field {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  color: var(--cove-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.role-node__field--compact {
+  flex: 0 0 auto;
+  padding-bottom: 0;
+}
+
+.role-node__provider {
+  height: 32px;
+  border: 1px solid var(--cove-border-subtle);
+  border-radius: 6px;
+  background: var(--cove-surface);
+  color: var(--cove-text);
+  padding: 0 8px;
+  font: inherit;
+  font-weight: 500;
+}
+
+.role-node__provider:focus {
+  outline: none;
+  border-color: var(--cove-border-strong);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cove-accent) 24%, transparent);
+}
+
+.role-node__input {
+  flex: 1;
+  min-height: 96px;
+  resize: none;
+  border: 1px solid var(--cove-border-subtle);
+  border-radius: 6px;
+  background: var(--cove-surface);
+  color: var(--cove-text);
+  padding: 9px 10px;
+  font: inherit;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.role-node__input:focus {
+  outline: none;
+  border-color: var(--cove-border-strong);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cove-accent) 24%, transparent);
+}
+
+.role-node__error {
+  margin: 0 12px 8px;
+  border: 1px solid var(--cove-overlay-danger-status-border);
+  border-radius: 6px;
+  background: var(--cove-overlay-danger-status-surface);
+  color: var(--cove-overlay-danger-status-text);
+  padding: 7px 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.role-node__footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.role-node__run {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  border: 1px solid var(--cove-border-subtle);
+  border-radius: 6px;
+  background: var(--cove-accent);
+  color: var(--cove-accent-text, var(--cove-text));
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.role-node__run:hover {
+  filter: brightness(1.04);
+}
+
+.role-node__run svg {
+  width: 14px;
+  height: 14px;
+}
+
+.role-node__history {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--cove-text-faint);
+  font-size: 11px;
+}
+
+.role-node__resizer {
+  position: absolute;
+  z-index: 2;
+  background: transparent;
+  touch-action: none;
+}
+
+.role-node__resizer--left,
+.role-node__resizer--right {
+  top: 34px;
+  bottom: 8px;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+.role-node__resizer--left {
+  left: 0;
+}
+
+.role-node__resizer--right {
+  right: 0;
+}
+
+.role-node__resizer--bottom {
+  right: 8px;
+  bottom: 0;
+  left: 8px;
+  height: 10px;
+  cursor: ns-resize;
+}
+
+.role-node__resizer--top-left,
+.role-node__resizer--top-right,
+.role-node__resizer--bottom-left,
+.role-node__resizer--bottom-right {
+  width: 14px;
+  height: 14px;
+}
+
+.role-node__resizer--top-left {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+
+.role-node__resizer--top-right {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+
+.role-node__resizer--bottom-left {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
+}
+
+.role-node__resizer--bottom-right {
+  right: 0;
+  bottom: 0;
+  cursor: nwse-resize;
+}

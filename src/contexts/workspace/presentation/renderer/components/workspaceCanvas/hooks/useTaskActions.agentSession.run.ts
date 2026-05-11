@@ -1,12 +1,6 @@
-import { toFileUri } from '@contexts/filesystem/domain/fileUri'
-import {
-  resolveAgentExecutablePathOverride,
-  resolveAgentLaunchEnv,
-  resolveAgentModel,
-} from '@contexts/settings/domain/agentSettings'
+import { resolveAgentModel } from '@contexts/settings/domain/agentSettings'
 import { clearResumeSessionBinding } from '../../../utils/agentResumeBinding'
 import { toErrorMessage } from '../helpers'
-import type { LaunchAgentSessionResult, TerminalRuntimeKind } from '@shared/contracts/dto'
 import {
   assignAgentNodeToTaskSpace,
   clearStaleTaskLinkedAgent,
@@ -17,7 +11,12 @@ import {
   type TaskActionContext,
 } from './useTaskActions.agentSession.shared'
 import { resolveDefaultAgentLaunchGeometry } from './agentLaunchGeometry'
-import { resolveSpaceMountLaunchContext } from './spaceMountLaunchContext'
+import {
+  buildMergedAgentLaunchEnv,
+  launchWorkspaceAgentSession,
+  resolveAgentExecutableOverride,
+  resolveWorkspaceAgentLaunchBinding,
+} from './useWorkspaceAgentLaunch.shared'
 
 function reuseLinkedAgentForTask({
   taskNodeId,
@@ -121,164 +120,111 @@ export async function runTaskAgentAction(
     return
   }
 
+  const taskSpace = findTaskSpace(taskNodeId, context.spacesRef)
+  let mountId = taskSpace?.targetMountId ?? null
+  let taskDirectory =
+    taskSpace && taskSpace.directoryPath.trim().length > 0
+      ? taskSpace.directoryPath.trim()
+      : context.workspacePath
+
+  const initialBinding = await resolveWorkspaceAgentLaunchBinding({
+    workspaceId: context.workspaceId,
+    workspacePath: context.workspacePath,
+    currentMountId: mountId,
+    executionDirectory: taskDirectory,
+    targetSpace: taskSpace,
+    spacesRef: context.spacesRef,
+    onSpacesChange: context.onSpacesChange,
+    onRequestPersistFlush: context.onRequestPersistFlush,
+  })
+  mountId = initialBinding.mountId
+  taskDirectory = initialBinding.executionDirectory
   const linkedAgentNodeId = taskNode.data.task.linkedAgentNodeId
+
+  if (linkedAgentNodeId) {
+    const reused = reuseLinkedAgentForTask({
+      taskNodeId,
+      linkedAgentNodeId,
+      taskTitle: taskNode.data.title,
+      requirement,
+      taskDirectory,
+      context,
+    })
+
+    if (reused) {
+      await context.launchAgentInNode(linkedAgentNodeId, 'new')
+      return
+    }
+
+    clearStaleTaskLinkedAgent({
+      taskNodeId,
+      setNodes: context.setNodes,
+    })
+    context.onRequestPersistFlush?.()
+  }
 
   const provider = context.agentSettings.defaultProvider
   const model = resolveAgentModel(context.agentSettings, provider)
-  const executablePathOverride = resolveAgentExecutablePathOverride(context.agentSettings, provider)
-  const env = resolveAgentLaunchEnv(context.agentSettings, provider)
+  const executablePathOverride = resolveAgentExecutableOverride(context.agentSettings, provider)
   const launchGeometry = resolveDefaultAgentLaunchGeometry({
     bucket: context.agentSettings.standardWindowSizeBucket,
     provider,
     terminalFontSize: context.agentSettings.terminalFontSize,
   })
-  const mergedEnv =
-    context.environmentVariables && Object.keys(context.environmentVariables).length > 0
-      ? { ...env, ...context.environmentVariables }
-      : env
+  const mergedEnv = buildMergedAgentLaunchEnv(
+    context.agentSettings,
+    provider,
+    context.environmentVariables,
+  )
 
   try {
-    let resolvedTaskSpace = findTaskSpace(taskNodeId, context.spacesRef)
-    const shouldFallbackToFirstMount =
-      resolvedTaskSpace === null &&
-      typeof context.workspaceId === 'string' &&
-      context.workspaceId.trim().length > 0
-    let mountContext = await resolveSpaceMountLaunchContext({
-      workspaceId: context.workspaceId,
-      workspacePath: context.workspacePath,
-      space: resolvedTaskSpace,
-      spaces: context.spacesRef.current,
-      onSpacesChange: context.onSpacesChange,
-      onRequestPersistFlush: context.onRequestPersistFlush,
-      fallbackToFirstMount: shouldFallbackToFirstMount,
-    })
-    resolvedTaskSpace = mountContext.space
-    let mountId = mountContext.mountId
-    let taskDirectory = mountContext.workingDirectory
-
-    if (linkedAgentNodeId) {
-      const reused = reuseLinkedAgentForTask({
-        taskNodeId,
-        linkedAgentNodeId,
-        taskTitle: taskNode.data.title,
-        requirement,
-        taskDirectory,
-        context,
-      })
-
-      if (reused) {
-        await context.launchAgentInNode(linkedAgentNodeId, 'new')
-        return
-      }
-
-      clearStaleTaskLinkedAgent({
-        taskNodeId,
-        setNodes: context.setNodes,
-      })
-      context.onRequestPersistFlush?.()
-    }
-
-    let launchedSessionId = ''
-    let launchedProfileId: string | null = null
-    let launchedRuntimeKind: TerminalRuntimeKind | undefined = undefined
-    let launchedEffectiveModel: string | null = null
-    let agentDirectory = taskDirectory
-
-    if (mountId) {
-      const invokeLaunchInMount = async (
-        nextMountId: string,
-      ): Promise<LaunchAgentSessionResult> => {
-        const cwdUri = taskDirectory.trim().length > 0 ? toFileUri(taskDirectory.trim()) : null
-        return await window.opencoveApi.controlSurface.invoke<LaunchAgentSessionResult>({
-          kind: 'command',
-          id: 'session.launchAgentInMount',
-          payload: {
-            mountId: nextMountId,
-            cwdUri,
-            prompt: requirement,
-            provider,
-            mode: 'new',
-            model,
-            ...(executablePathOverride ? { executablePathOverride } : {}),
-            ...(Object.keys(mergedEnv).length > 0 ? { env: mergedEnv } : {}),
-            agentFullAccess: context.agentSettings.agentFullAccess,
-            cols: launchGeometry.terminalGeometry.cols,
-            rows: launchGeometry.terminalGeometry.rows,
-          },
-        })
-      }
-
-      let launched: LaunchAgentSessionResult
-      try {
-        launched = await invokeLaunchInMount(mountId)
-      } catch (error) {
-        mountContext = await resolveSpaceMountLaunchContext({
+    const launched = await launchWorkspaceAgentSession({
+      mountId,
+      executionDirectory: taskDirectory,
+      prompt: requirement,
+      provider,
+      mode: 'new',
+      model,
+      executablePathOverride,
+      mergedEnv,
+      agentSettings: context.agentSettings,
+      launchGeometry,
+      retryResolveMountBinding: async failedMountId => {
+        const nextBinding = await resolveWorkspaceAgentLaunchBinding({
           workspaceId: context.workspaceId,
           workspacePath: context.workspacePath,
-          space: findTaskSpace(taskNodeId, context.spacesRef) ?? resolvedTaskSpace,
-          spaces: context.spacesRef.current,
+          currentMountId: null,
+          executionDirectory: taskDirectory,
+          targetSpace: taskSpace,
+          spacesRef: context.spacesRef,
           onSpacesChange: context.onSpacesChange,
           onRequestPersistFlush: context.onRequestPersistFlush,
-          fallbackToFirstMount: shouldFallbackToFirstMount,
         })
-        const nextMountId = mountContext.mountId
-        if (!nextMountId || nextMountId === mountId) {
-          throw error
-        }
-
-        resolvedTaskSpace = mountContext.space
-        mountId = nextMountId
-        taskDirectory = mountContext.workingDirectory
-        launched = await invokeLaunchInMount(mountId)
-      }
-
-      launchedSessionId = launched.sessionId
-      launchedProfileId = launched.profileId
-      launchedRuntimeKind = launched.runtimeKind ?? undefined
-      launchedEffectiveModel = launched.effectiveModel
-      agentDirectory = launched.executionContext.workingDirectory
-    } else {
-      const launched = await window.opencoveApi.agent.launch({
-        provider,
-        cwd: taskDirectory,
-        profileId: context.agentSettings.defaultTerminalProfileId,
-        prompt: requirement,
-        mode: 'new',
-        model,
-        ...(executablePathOverride ? { executablePathOverride } : {}),
-        ...(Object.keys(mergedEnv).length > 0 ? { env: mergedEnv } : {}),
-        agentFullAccess: context.agentSettings.agentFullAccess,
-        cols: launchGeometry.terminalGeometry.cols,
-        rows: launchGeometry.terminalGeometry.rows,
-      })
-
-      launchedSessionId = launched.sessionId
-      launchedProfileId = launched.profileId ?? null
-      launchedRuntimeKind = launched.runtimeKind
-      launchedEffectiveModel = launched.effectiveModel
-    }
+        return nextBinding.mountId && nextBinding.mountId !== failedMountId ? nextBinding : null
+      },
+    })
 
     const createdAgentNode = await context.createNodeForSession({
-      sessionId: launchedSessionId,
-      profileId: launchedProfileId,
-      runtimeKind: launchedRuntimeKind,
+      sessionId: launched.sessionId,
+      profileId: launched.profileId,
+      runtimeKind: launched.runtimeKind,
       terminalGeometry: launchGeometry.terminalGeometry,
       title: context.buildAgentNodeTitle(provider, taskNode.data.title),
       anchor: createTaskAgentAnchor(taskNode),
       kind: 'agent',
       placement: {
-        targetSpaceRect: resolvedTaskSpace?.rect ?? null,
+        targetSpaceRect: taskSpace?.rect ?? null,
         preferredDirection: 'right',
       },
       agent: {
         provider,
         prompt: requirement,
         model,
-        effectiveModel: launchedEffectiveModel,
+        effectiveModel: launched.effectiveModel,
         launchMode: 'new',
         ...clearResumeSessionBinding(),
-        executionDirectory: agentDirectory,
-        expectedDirectory: agentDirectory,
+        executionDirectory: launched.executionDirectory,
+        expectedDirectory: launched.executionDirectory,
         directoryMode: 'workspace',
         customDirectory: null,
         shouldCreateDirectory: false,

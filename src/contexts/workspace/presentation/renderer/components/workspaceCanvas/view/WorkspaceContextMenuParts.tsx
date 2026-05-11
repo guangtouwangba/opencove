@@ -25,6 +25,7 @@ import {
 } from '@contexts/settings/domain/agentSettings'
 import { LABEL_COLORS, type NodeLabelColorOverride } from '@shared/types/labelColor'
 import { WorkspaceContextQuickMenuItems } from './WorkspaceContextMenuQuickMenuParts'
+import { WorkspaceContextRoleMenuItems } from './WorkspaceContextRoleMenuParts'
 
 function renderMark(checked: boolean): React.JSX.Element {
   return checked ? (
@@ -40,6 +41,9 @@ export function WorkspaceContextPaneMenuContent({
   createWebsiteNodeFromContextMenu,
   websiteWindowsEnabled,
   openTaskCreator,
+  roleButtonRef,
+  openProjectRolesSubmenu,
+  isProjectRolesSubmenuOpen,
   openAgentLauncher,
   createEmptySpaceFromContextMenu,
   canCreateEmptySpace,
@@ -69,6 +73,9 @@ export function WorkspaceContextPaneMenuContent({
   createWebsiteNodeFromContextMenu: () => void
   websiteWindowsEnabled: boolean
   openTaskCreator: () => void
+  roleButtonRef: React.RefObject<HTMLButtonElement | null>
+  openProjectRolesSubmenu: () => void
+  isProjectRolesSubmenuOpen: boolean
   openAgentLauncher: () => void
   createEmptySpaceFromContextMenu: () => void
   canCreateEmptySpace: boolean
@@ -143,6 +150,12 @@ export function WorkspaceContextPaneMenuContent({
         <ListTodo className="workspace-context-menu__icon" aria-hidden="true" />
         <span className="workspace-context-menu__label">{t('workspaceContextMenu.newTask')}</span>
       </button>
+
+      <WorkspaceContextRoleMenuItems
+        roleButtonRef={roleButtonRef}
+        openProjectRolesSubmenu={openProjectRolesSubmenu}
+        isProjectRolesSubmenuOpen={isProjectRolesSubmenuOpen}
+      />
 
       <div className="workspace-context-menu__split">
         <button

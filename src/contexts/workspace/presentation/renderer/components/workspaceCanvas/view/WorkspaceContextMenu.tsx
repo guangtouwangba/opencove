@@ -1,15 +1,9 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
-import { WorkspaceContextArrangeBySubmenu } from './WorkspaceContextArrangeBySubmenu'
 import {
-  WorkspaceContextAgentProviderSubmenu,
-  WorkspaceContextLabelColorSubmenu,
   WorkspaceContextPaneMenuContent,
   WorkspaceContextSelectionMenuContent,
 } from './WorkspaceContextMenuParts'
-import {
-  WorkspaceContextQuickCommandsSubmenu,
-  WorkspaceContextQuickPhrasesSubmenu,
-} from './WorkspaceContextMenuQuickMenuParts'
+import { WorkspaceContextSubmenus } from './WorkspaceContextSubmenus'
 import {
   MENU_WIDTH,
   SUBMENU_CLOSE_DELAY_MS,
@@ -32,10 +26,15 @@ export function WorkspaceContextMenu({
   createWebsiteNodeFromContextMenu,
   websiteWindowsEnabled,
   openTaskCreator,
+  openRoleCreator,
   openAgentLauncher,
   agentProviderOrder,
   agentExecutablePathOverrideByProvider,
   openAgentLauncherForProvider,
+  projectRoles,
+  runProjectRoleFromContextMenu,
+  openRoleEditor,
+  deleteProjectRole,
   quickCommands,
   quickPhrases,
   runQuickCommand,
@@ -119,6 +118,11 @@ export function WorkspaceContextMenu({
     setOpenSubmenu('quick-phrases')
   }, [cancelScheduledSubmenuClose])
 
+  const openProjectRolesSubmenu = useCallback(() => {
+    cancelScheduledSubmenuClose()
+    setOpenSubmenu('project-roles')
+  }, [cancelScheduledSubmenuClose])
+
   const openLabelColorSubmenu = useCallback(() => {
     cancelScheduledSubmenuClose()
     setOpenSubmenu('label-color')
@@ -156,6 +160,7 @@ export function WorkspaceContextMenu({
   const agentProviderToggleRef = React.useRef<HTMLButtonElement | null>(null)
   const quickCommandsButtonRef = React.useRef<HTMLButtonElement | null>(null)
   const quickPhrasesButtonRef = React.useRef<HTMLButtonElement | null>(null)
+  const roleButtonRef = React.useRef<HTMLButtonElement | null>(null)
   const arrangeByButtonRef = React.useRef<HTMLButtonElement | null>(null)
   const labelColorButtonRef = React.useRef<HTMLButtonElement | null>(null)
   const [measuredMenuSize, setMeasuredMenuSize] = useState<{
@@ -199,6 +204,11 @@ export function WorkspaceContextMenu({
   const keepQuickPhrasesSubmenuOpen = useCallback(() => {
     cancelScheduledSubmenuClose()
     setOpenSubmenu('quick-phrases')
+  }, [cancelScheduledSubmenuClose])
+
+  const keepProjectRolesSubmenuOpen = useCallback(() => {
+    cancelScheduledSubmenuClose()
+    setOpenSubmenu('project-roles')
   }, [cancelScheduledSubmenuClose])
 
   const keepLabelColorSubmenuOpen = useCallback(() => {
@@ -253,6 +263,7 @@ export function WorkspaceContextMenu({
     contextMenu,
     enabledQuickCommands.length,
     enabledQuickPhrases.length,
+    projectRoles.length,
     sortedInstalledProviders.length,
   ])
 
@@ -286,9 +297,11 @@ export function WorkspaceContextMenu({
           ? quickCommandsButtonRef.current
           : openSubmenu === 'quick-phrases'
             ? quickPhrasesButtonRef.current
-            : openSubmenu === 'label-color'
-              ? labelColorButtonRef.current
-              : null
+            : openSubmenu === 'project-roles'
+              ? roleButtonRef.current
+              : openSubmenu === 'label-color'
+                ? labelColorButtonRef.current
+                : null
   const measuredSubmenuAnchorRect = activeSubmenuAnchor?.getBoundingClientRect() ?? null
   const submenuMaxHeight = Math.min(SUBMENU_MAX_HEIGHT, viewportHeight - VIEWPORT_PADDING * 2)
   const submenuVisibleHeight =
@@ -324,17 +337,6 @@ export function WorkspaceContextMenu({
       : arrangeScope === 'canvas'
         ? canArrangeCanvas
         : canArrangeHitSpace
-  const shouldShowArrangeSubmenu = contextMenu.kind === 'pane' && openSubmenu === 'arrangeBy'
-  const shouldShowAgentProviderSubmenu =
-    contextMenu.kind === 'pane' &&
-    openSubmenu === 'agent-providers' &&
-    sortedInstalledProviders.length > 0
-  const shouldShowQuickCommandsSubmenu =
-    contextMenu.kind === 'pane' && openSubmenu === 'quick-commands'
-  const shouldShowQuickPhrasesSubmenu =
-    contextMenu.kind === 'pane' && openSubmenu === 'quick-phrases'
-  const shouldShowLabelColorSubmenu =
-    contextMenu.kind === 'selection' && openSubmenu === 'label-color'
   const sharedSubmenuStyle = {
     top: submenuPlacement.top,
     left: submenuPlacement.left,
@@ -363,6 +365,9 @@ export function WorkspaceContextMenu({
             createWebsiteNodeFromContextMenu={createWebsiteNodeFromContextMenu}
             websiteWindowsEnabled={websiteWindowsEnabled}
             openTaskCreator={openTaskCreator}
+            roleButtonRef={roleButtonRef}
+            openProjectRolesSubmenu={openProjectRolesSubmenu}
+            isProjectRolesSubmenuOpen={openSubmenu === 'project-roles'}
             openAgentLauncher={openAgentLauncher}
             createEmptySpaceFromContextMenu={createEmptySpaceFromContextMenu}
             canCreateEmptySpace={contextHitSpace === null}
@@ -407,80 +412,43 @@ export function WorkspaceContextMenu({
         )}
       </div>
 
-      {shouldShowArrangeSubmenu ? (
-        <WorkspaceContextArrangeBySubmenu
-          submenuRef={submenuRef}
-          style={{
-            top: submenuPlacement.top,
-            left: submenuPlacement.left,
-            maxHeight: submenuMaxHeight,
-          }}
-          hitSpace={contextHitSpace}
-          canArrangeAll={canArrangeAll}
-          canArrangeCanvas={canArrangeCanvas}
-          canArrangeHitSpace={canArrangeHitSpace}
-          arrangeScope={arrangeScope}
-          arrangeOrder={arrangeOrder}
-          arrangeSpaceFit={arrangeSpaceFit}
-          onSelectScope={handleArrangeScopeSelect}
-          onSelectOrder={handleArrangeOrderSelect}
-          onSelectSpaceFit={handleArrangeSpaceFitSelect}
-        />
-      ) : null}
-
-      {shouldShowAgentProviderSubmenu ? (
-        <WorkspaceContextAgentProviderSubmenu
-          sortedInstalledProviders={sortedInstalledProviders}
-          submenuRef={submenuRef}
-          style={sharedSubmenuStyle}
-          keepSubmenuOpen={keepAgentProviderSubmenuOpen}
-          scheduleSubmenuClose={scheduleSubmenuClose}
-          openAgentLauncherForProvider={openAgentLauncherForProvider}
-        />
-      ) : null}
-
-      {shouldShowQuickCommandsSubmenu ? (
-        <WorkspaceContextQuickCommandsSubmenu
-          commands={enabledQuickCommands}
-          submenuRef={submenuRef}
-          style={sharedSubmenuStyle}
-          keepSubmenuOpen={keepQuickCommandsSubmenuOpen}
-          scheduleSubmenuClose={scheduleSubmenuClose}
-          runQuickCommand={runQuickCommand}
-          openQuickMenuSettings={() => {
-            closeContextMenu()
-            setOpenSubmenu(null)
-            openQuickMenuSettings()
-          }}
-        />
-      ) : null}
-
-      {shouldShowQuickPhrasesSubmenu ? (
-        <WorkspaceContextQuickPhrasesSubmenu
-          phrases={enabledQuickPhrases}
-          submenuRef={submenuRef}
-          style={sharedSubmenuStyle}
-          keepSubmenuOpen={keepQuickPhrasesSubmenuOpen}
-          scheduleSubmenuClose={scheduleSubmenuClose}
-          insertQuickPhrase={insertQuickPhrase}
-          openQuickMenuSettings={() => {
-            closeContextMenu()
-            setOpenSubmenu(null)
-            openQuickMenuSettings()
-          }}
-        />
-      ) : null}
-
-      {shouldShowLabelColorSubmenu ? (
-        <WorkspaceContextLabelColorSubmenu
-          submenuRef={submenuRef}
-          style={sharedSubmenuStyle}
-          keepSubmenuOpen={keepLabelColorSubmenuOpen}
-          scheduleSubmenuClose={scheduleSubmenuClose}
-          setSelectedNodeLabelColorOverride={setSelectedNodeLabelColorOverride}
-          closeContextMenu={closeContextMenu}
-        />
-      ) : null}
+      <WorkspaceContextSubmenus
+        contextMenu={contextMenu}
+        openSubmenu={openSubmenu}
+        submenuRef={submenuRef}
+        sharedSubmenuStyle={sharedSubmenuStyle}
+        contextHitSpace={contextHitSpace}
+        canArrangeAll={canArrangeAll}
+        canArrangeCanvas={canArrangeCanvas}
+        canArrangeHitSpace={canArrangeHitSpace}
+        arrangeScope={arrangeScope}
+        arrangeOrder={arrangeOrder}
+        arrangeSpaceFit={arrangeSpaceFit}
+        handleArrangeScopeSelect={handleArrangeScopeSelect}
+        handleArrangeOrderSelect={handleArrangeOrderSelect}
+        handleArrangeSpaceFitSelect={handleArrangeSpaceFitSelect}
+        sortedInstalledProviders={sortedInstalledProviders}
+        enabledQuickCommands={enabledQuickCommands}
+        enabledQuickPhrases={enabledQuickPhrases}
+        projectRoles={projectRoles}
+        openRoleCreator={openRoleCreator}
+        keepAgentProviderSubmenuOpen={keepAgentProviderSubmenuOpen}
+        keepQuickCommandsSubmenuOpen={keepQuickCommandsSubmenuOpen}
+        keepQuickPhrasesSubmenuOpen={keepQuickPhrasesSubmenuOpen}
+        keepProjectRolesSubmenuOpen={keepProjectRolesSubmenuOpen}
+        keepLabelColorSubmenuOpen={keepLabelColorSubmenuOpen}
+        scheduleSubmenuClose={scheduleSubmenuClose}
+        openAgentLauncherForProvider={openAgentLauncherForProvider}
+        runQuickCommand={runQuickCommand}
+        insertQuickPhrase={insertQuickPhrase}
+        openQuickMenuSettings={openQuickMenuSettings}
+        closeContextMenu={closeContextMenu}
+        setOpenSubmenu={setOpenSubmenu}
+        runProjectRoleFromContextMenu={runProjectRoleFromContextMenu}
+        openRoleEditor={openRoleEditor}
+        deleteProjectRole={deleteProjectRole}
+        setSelectedNodeLabelColorOverride={setSelectedNodeLabelColorOverride}
+      />
     </>
   )
 }

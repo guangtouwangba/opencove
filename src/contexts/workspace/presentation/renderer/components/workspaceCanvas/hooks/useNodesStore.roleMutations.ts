@@ -1,0 +1,151 @@
+import { useCallback } from 'react'
+import type { Node } from '@xyflow/react'
+import type { AgentProvider } from '@contexts/settings/domain/agentSettings'
+import type { RoleNodeData, TerminalNodeData } from '../../../types'
+
+type SetNodes = (
+  updater: (prevNodes: Node<TerminalNodeData>[]) => Node<TerminalNodeData>[],
+  options?: { syncLayout?: boolean },
+) => void
+
+export function useWorkspaceCanvasRoleNodeMutations({
+  setNodes,
+  onRequestPersistFlush,
+}: {
+  setNodes: SetNodes
+  onRequestPersistFlush?: () => void
+}): {
+  updateRoleProvider: (nodeId: string, provider: AgentProvider) => void
+  updateRoleInput: (nodeId: string, input: string) => void
+  appendRoleRunRecord: (
+    nodeId: string,
+    next: Pick<RoleNodeData, 'linkedAgentNodeId'> & {
+      record: RoleNodeData['runHistory'][number]
+    },
+  ) => void
+} {
+  const updateRoleProvider = useCallback(
+    (nodeId: string, provider: AgentProvider) => {
+      setNodes(
+        prevNodes => {
+          let hasChanged = false
+          const now = new Date().toISOString()
+          const nextNodes = prevNodes.map(node => {
+            if (node.id !== nodeId || node.data.kind !== 'role' || !node.data.role) {
+              return node
+            }
+
+            if (node.data.role.selectedProvider === provider) {
+              return node
+            }
+
+            hasChanged = true
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                role: {
+                  ...node.data.role,
+                  selectedProvider: provider,
+                  updatedAt: now,
+                },
+              },
+            }
+          })
+
+          return hasChanged ? nextNodes : prevNodes
+        },
+        { syncLayout: false },
+      )
+
+      onRequestPersistFlush?.()
+    },
+    [onRequestPersistFlush, setNodes],
+  )
+
+  const updateRoleInput = useCallback(
+    (nodeId: string, input: string) => {
+      setNodes(
+        prevNodes => {
+          let hasChanged = false
+          const now = new Date().toISOString()
+          const nextNodes = prevNodes.map(node => {
+            if (node.id !== nodeId || node.data.kind !== 'role' || !node.data.role) {
+              return node
+            }
+
+            if (node.data.role.input === input) {
+              return node
+            }
+
+            hasChanged = true
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                role: {
+                  ...node.data.role,
+                  input,
+                  updatedAt: now,
+                },
+              },
+            }
+          })
+
+          return hasChanged ? nextNodes : prevNodes
+        },
+        { syncLayout: false },
+      )
+
+      onRequestPersistFlush?.()
+    },
+    [onRequestPersistFlush, setNodes],
+  )
+
+  const appendRoleRunRecord = useCallback(
+    (
+      nodeId: string,
+      next: Pick<RoleNodeData, 'linkedAgentNodeId'> & {
+        record: RoleNodeData['runHistory'][number]
+      },
+    ) => {
+      setNodes(
+        prevNodes => {
+          let hasChanged = false
+          const updatedAt = new Date().toISOString()
+          const nextNodes = prevNodes.map(node => {
+            if (node.id !== nodeId || node.data.kind !== 'role' || !node.data.role) {
+              return node
+            }
+
+            hasChanged = true
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                role: {
+                  ...node.data.role,
+                  linkedAgentNodeId: next.linkedAgentNodeId,
+                  runHistory: [next.record, ...node.data.role.runHistory].slice(0, 20),
+                  updatedAt,
+                },
+              },
+            }
+          })
+
+          return hasChanged ? nextNodes : prevNodes
+        },
+        { syncLayout: false },
+      )
+
+      onRequestPersistFlush?.()
+    },
+    [onRequestPersistFlush, setNodes],
+  )
+
+  return {
+    updateRoleProvider,
+    updateRoleInput,
+    appendRoleRunRecord,
+  }
+}

@@ -9,6 +9,7 @@ import { zhCNWorktree } from './zh-CN.worktree'
 import { zhCNWebsiteNode } from './zh-CN.websiteNode'
 import { zhCNIssueReport } from './zh-CN.issueReport'
 import { zhCNPerformanceMonitor } from './zh-CN.performanceMonitor'
+import { zhCNRole } from './zh-CN.role'
 
 export const zhCN = {
   common: {
@@ -17,7 +18,9 @@ export const zhCN = {
     close: '关闭',
     confirm: '确认',
     create: '创建',
+    creating: '创建中...',
     delete: '删除',
+    edit: '编辑',
     error: '错误',
     generateByAi: 'AI 生成',
     generating: '生成中...',
@@ -376,7 +379,10 @@ export const zhCN = {
     newNote: '新建便签',
     newWebsite: '新建网页窗口',
     newTask: '新建任务',
+    newRole: '新建角色',
     runAgent: '运行 Agent',
+    runRole: '运行角色',
+    noProjectRoles: '当前项目还没有角色',
     createEmptySpace: '创建空 Space',
     arrange: '整理',
     arrangeBy: '整理方式',
@@ -466,6 +472,7 @@ export const zhCN = {
     advanced: '高级',
     hideAdvanced: '隐藏高级设置',
   },
+  ...zhCNRole,
   taskPromptTemplates: {
     openMenu: '提示词模板',
     globalSection: '全局模板',

@@ -57,6 +57,8 @@ export function useWorkspaceCanvasComposedNodeTypes({
     terminalFontSize: agentSettings.terminalFontSize,
     terminalFontFamily: agentSettings.terminalFontFamily,
     terminalDisplayCalibration,
+    agentProviderOrder: agentSettings.agentProviderOrder,
+    defaultProvider: agentSettings.defaultProvider,
     selectNode,
     ...actionRefs,
   })

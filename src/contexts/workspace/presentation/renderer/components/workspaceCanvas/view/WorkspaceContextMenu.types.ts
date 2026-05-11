@@ -1,6 +1,7 @@
 import type {
   AgentExecutablePathOverrideByProvider,
   AgentProvider,
+  ProjectRoleDefinition,
   QuickCommand,
   QuickPhrase,
 } from '@contexts/settings/domain/agentSettings'
@@ -13,6 +14,7 @@ export type OpenSubmenu =
   | 'arrangeBy'
   | 'agent-providers'
   | 'label-color'
+  | 'project-roles'
   | 'quick-commands'
   | 'quick-phrases'
   | null
@@ -25,10 +27,15 @@ export interface WorkspaceContextMenuProps {
   createWebsiteNodeFromContextMenu: () => void
   websiteWindowsEnabled: boolean
   openTaskCreator: () => void
+  openRoleCreator: () => void
   openAgentLauncher: () => void
   agentProviderOrder: AgentProvider[]
   agentExecutablePathOverrideByProvider: AgentExecutablePathOverrideByProvider<AgentProvider>
   openAgentLauncherForProvider: (provider: AgentProvider) => void
+  projectRoles: ProjectRoleDefinition[]
+  runProjectRoleFromContextMenu: (roleId: string) => void
+  openRoleEditor: (roleId: string) => void
+  deleteProjectRole: (roleId: string) => void
   quickCommands: QuickCommand[]
   quickPhrases: QuickPhrase[]
   runQuickCommand: (command: QuickCommand) => Promise<void>

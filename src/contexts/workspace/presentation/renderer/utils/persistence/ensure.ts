@@ -19,6 +19,7 @@ import type {
 import { CANVAS_IMAGE_MIME_TYPES } from '@shared/contracts/dto'
 import { normalizeLabelColor, normalizeNodeLabelColorOverride } from '@shared/types/labelColor'
 import { normalizeResumeSessionBinding } from './ensureResumeSessionBinding'
+import { ensurePersistedRoleData } from './ensureRoleNodeData'
 import { ensurePersistedSpaceArchiveRecord } from './ensureSpaceArchiveRecord'
 import {
   normalizeAgentRuntimeStatus,
@@ -317,6 +318,7 @@ function ensurePersistedNode(node: unknown): PersistedTerminalNode | null {
   const agent = ensurePersistedAgentData(record.agent)
   const task = ensurePersistedTaskData(record.task)
   const note = ensurePersistedNoteData(record.task)
+  const role = ensurePersistedRoleData(record.task)
   const image = ensurePersistedImageData(record.task)
   const document = ensurePersistedDocumentData(record.task)
   const website = ensurePersistedWebsiteData(record.task)
@@ -359,13 +361,15 @@ function ensurePersistedNode(node: unknown): PersistedTerminalNode | null {
         ? task
         : kind === 'note'
           ? note
-          : kind === 'image'
-            ? image
-            : kind === 'document'
-              ? document
-              : kind === 'website'
-                ? (website ?? { url: '', pinned: false, sessionMode: 'shared', profileId: null })
-                : null,
+          : kind === 'role'
+            ? role
+            : kind === 'image'
+              ? image
+              : kind === 'document'
+                ? document
+                : kind === 'website'
+                  ? (website ?? { url: '', pinned: false, sessionMode: 'shared', profileId: null })
+                  : null,
     position: {
       x: positionRecord.x,
       y: positionRecord.y,

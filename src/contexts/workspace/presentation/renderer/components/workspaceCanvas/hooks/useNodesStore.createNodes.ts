@@ -1,8 +1,6 @@
 import { useCallback } from 'react'
 import type { Node } from '@xyflow/react'
-import type { MutableRefObject } from 'react'
 import { useTranslation } from '@app/renderer/i18n'
-import type { StandardWindowSizeBucket } from '@contexts/settings/domain/agentSettings'
 import type {
   DocumentNodeData,
   ImageNodeData,
@@ -25,32 +23,19 @@ import {
   resolveDefaultTaskWindowSize,
   resolveDefaultTerminalWindowSize,
 } from '../constants'
-import type {
-  CreateNodeInput,
-  NodeCreationPlacementOptions,
-  NodePlacementOptions,
-  ShowWorkspaceCanvasMessage,
-} from '../types'
+import type { CreateNodeInput, NodeCreationPlacementOptions, NodePlacementOptions } from '../types'
 import type {
   CreateNoteNodeOptions,
-  UseWorkspaceCanvasNodesStoreResult,
+  UseWorkspaceCanvasNodeCreationParams,
 } from './useNodesStore.types'
 import { resolveDocumentTitleFromUri } from './useNodesStore.documentTitle'
 import { EMPTY_NODE_KIND_DATA } from './useNodesStore.nodeData'
 import { useWorkspaceCanvasWebsiteNodeCreation } from './useNodesStore.createWebsiteNode'
+import { useWorkspaceCanvasRoleNodeCreation } from './useNodesStore.createRoleNode'
 import { resolveNodesPlacement } from './useNodesStore.resolvePlacement'
 
 function resolveSpaceRects(spaces: WorkspaceSpaceState[]): WorkspaceSpaceRect[] {
   return spaces.map(space => space.rect).filter((rect): rect is WorkspaceSpaceRect => rect !== null)
-}
-interface UseWorkspaceCanvasNodeCreationParams {
-  nodesRef: MutableRefObject<Node<TerminalNodeData>[]>
-  spacesRef: MutableRefObject<WorkspaceSpaceState[]>
-  onRequestPersistFlush?: () => void
-  onShowMessage?: ShowWorkspaceCanvasMessage
-  onNodeCreated?: (nodeId: string) => void
-  setNodes: UseWorkspaceCanvasNodesStoreResult['setNodes']
-  standardWindowSizeBucket: StandardWindowSizeBucket
 }
 export function useWorkspaceCanvasNodeCreation({
   nodesRef,
@@ -348,6 +333,16 @@ export function useWorkspaceCanvasNodeCreation({
     ],
   )
 
+  const { createRoleNode } = useWorkspaceCanvasRoleNodeCreation({
+    nodesRef,
+    spacesRef,
+    onRequestPersistFlush,
+    onShowMessage,
+    onNodeCreated,
+    setNodes,
+    standardWindowSizeBucket,
+  })
+
   const createImageNode = useCallback(
     (anchor: Point, image: ImageNodeData, placementOptions?: NodeCreationPlacementOptions) => {
       const defaultSize = resolveDefaultImageWindowSize()
@@ -483,6 +478,7 @@ export function useWorkspaceCanvasNodeCreation({
     createNodeForSession,
     createNoteNode,
     createTaskNode,
+    createRoleNode,
     createImageNode,
     createDocumentNode,
     createWebsiteNode,

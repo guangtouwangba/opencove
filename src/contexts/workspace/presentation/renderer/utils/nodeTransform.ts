@@ -4,39 +4,90 @@ import type {
   ImageNodeData,
   NoteNodeData,
   PersistedWorkspaceState,
+  RoleNodeData,
   TaskNodeData,
   TerminalNodeData,
   WebsiteNodeData,
 } from '../types'
 
 function isTaskNodeData(
-  value: TaskNodeData | NoteNodeData | ImageNodeData | DocumentNodeData | WebsiteNodeData | null,
+  value:
+    | TaskNodeData
+    | NoteNodeData
+    | RoleNodeData
+    | ImageNodeData
+    | DocumentNodeData
+    | WebsiteNodeData
+    | null,
 ): value is TaskNodeData {
   return value !== null && typeof value === 'object' && 'requirement' in value
 }
 
 function isNoteNodeData(
-  value: TaskNodeData | NoteNodeData | ImageNodeData | DocumentNodeData | WebsiteNodeData | null,
+  value:
+    | TaskNodeData
+    | NoteNodeData
+    | RoleNodeData
+    | ImageNodeData
+    | DocumentNodeData
+    | WebsiteNodeData
+    | null,
 ): value is NoteNodeData {
   return value !== null && typeof value === 'object' && 'text' in value
 }
 
 function isImageNodeData(
-  value: TaskNodeData | NoteNodeData | ImageNodeData | DocumentNodeData | WebsiteNodeData | null,
+  value:
+    | TaskNodeData
+    | NoteNodeData
+    | RoleNodeData
+    | ImageNodeData
+    | DocumentNodeData
+    | WebsiteNodeData
+    | null,
 ): value is ImageNodeData {
   return value !== null && typeof value === 'object' && 'assetId' in value && 'mimeType' in value
 }
 
 function isDocumentNodeData(
-  value: TaskNodeData | NoteNodeData | ImageNodeData | DocumentNodeData | WebsiteNodeData | null,
+  value:
+    | TaskNodeData
+    | NoteNodeData
+    | RoleNodeData
+    | ImageNodeData
+    | DocumentNodeData
+    | WebsiteNodeData
+    | null,
 ): value is DocumentNodeData {
   return value !== null && typeof value === 'object' && 'uri' in value
 }
 
 function isWebsiteNodeData(
-  value: TaskNodeData | NoteNodeData | ImageNodeData | DocumentNodeData | WebsiteNodeData | null,
+  value:
+    | TaskNodeData
+    | NoteNodeData
+    | RoleNodeData
+    | ImageNodeData
+    | DocumentNodeData
+    | WebsiteNodeData
+    | null,
 ): value is WebsiteNodeData {
   return value !== null && typeof value === 'object' && 'url' in value && 'sessionMode' in value
+}
+
+function isRoleNodeData(
+  value:
+    | TaskNodeData
+    | NoteNodeData
+    | RoleNodeData
+    | ImageNodeData
+    | DocumentNodeData
+    | WebsiteNodeData
+    | null,
+): value is RoleNodeData {
+  return (
+    value !== null && typeof value === 'object' && 'roleId' in value && 'promptTemplate' in value
+  )
 }
 
 export function toRuntimeNodes(workspace: PersistedWorkspaceState): Node<TerminalNodeData>[] {
@@ -57,6 +108,25 @@ export function toRuntimeNodes(workspace: PersistedWorkspaceState): Node<Termina
       node.kind === 'task' ? (isTaskNodeData(node.task) ? node.task : defaultTask) : null
     const note =
       node.kind === 'note' ? (isNoteNodeData(node.task) ? node.task : { text: '' }) : null
+    const role: RoleNodeData | null =
+      node.kind === 'role'
+        ? isRoleNodeData(node.task)
+          ? node.task
+          : {
+              roleId: '',
+              roleName: node.title,
+              roleDescription: '',
+              promptTemplate: '',
+              inputHint: '',
+              outputFormat: '',
+              input: '',
+              selectedProvider: null,
+              linkedAgentNodeId: null,
+              runHistory: [],
+              createdAt: null,
+              updatedAt: null,
+            }
+        : null
     const image: ImageNodeData | null =
       node.kind === 'image' ? (isImageNodeData(node.task) ? node.task : null) : null
     const document: DocumentNodeData | null =
@@ -73,11 +143,13 @@ export function toRuntimeNodes(workspace: PersistedWorkspaceState): Node<Termina
             ? 'noteNode'
             : node.kind === 'image'
               ? 'imageNode'
-              : node.kind === 'document'
-                ? 'documentNode'
-                : node.kind === 'website'
-                  ? 'websiteNode'
-                  : 'terminalNode',
+              : node.kind === 'role'
+                ? 'roleNode'
+                : node.kind === 'document'
+                  ? 'documentNode'
+                  : node.kind === 'website'
+                    ? 'websiteNode'
+                    : 'terminalNode',
       position: node.position,
       initialWidth: node.width,
       initialHeight: node.height,
@@ -105,6 +177,7 @@ export function toRuntimeNodes(workspace: PersistedWorkspaceState): Node<Termina
         agent: node.agent,
         task,
         note,
+        role,
         image,
         document,
         website,

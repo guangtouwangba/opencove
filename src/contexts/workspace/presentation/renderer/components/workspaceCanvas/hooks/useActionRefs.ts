@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from 'react'
 import type { Node, ReactFlowInstance } from '@xyflow/react'
+import type { AgentProvider } from '@contexts/settings/domain/agentSettings'
 import type { NodeFrame, TaskRuntimeStatus, TerminalNodeData } from '../../../types'
 import { focusNodeInViewport } from '../helpers'
 import type { AgentSessionSummary, WebsiteWindowSessionMode } from '@shared/contracts/dto'
@@ -19,6 +20,9 @@ export interface WorkspaceCanvasActionRefs {
   updateNoteTextRef: React.MutableRefObject<(nodeId: string, text: string) => void>
   renameNoteTitleRef: React.MutableRefObject<(nodeId: string, title: string) => void>
   updateWebsiteUrlRef: React.MutableRefObject<(nodeId: string, url: string) => void>
+  updateRoleInputRef: React.MutableRefObject<(nodeId: string, input: string) => void>
+  updateRoleProviderRef: React.MutableRefObject<(nodeId: string, provider: AgentProvider) => void>
+  runRoleRef: React.MutableRefObject<(nodeId: string, inputOverride?: string) => Promise<void>>
   setWebsitePinnedRef: React.MutableRefObject<(nodeId: string, pinned: boolean) => void>
   setWebsiteSessionRef: React.MutableRefObject<
     (nodeId: string, sessionMode: WebsiteWindowSessionMode, profileId: string | null) => void
@@ -71,6 +75,15 @@ export function useWorkspaceCanvasActionRefs(): WorkspaceCanvasActionRefs {
   )
   const updateWebsiteUrlRef = useRef<(nodeId: string, url: string) => void>(
     (_nodeId: string, _url: string) => undefined,
+  )
+  const updateRoleInputRef = useRef<(nodeId: string, input: string) => void>(
+    (_nodeId: string, _input: string) => undefined,
+  )
+  const updateRoleProviderRef = useRef<(nodeId: string, provider: AgentProvider) => void>(
+    (_nodeId: string, _provider: AgentProvider) => undefined,
+  )
+  const runRoleRef = useRef<(nodeId: string, inputOverride?: string) => Promise<void>>(
+    async (_nodeId: string, _inputOverride?: string) => undefined,
   )
   const setWebsitePinnedRef = useRef<(nodeId: string, pinned: boolean) => void>(
     (_nodeId: string, _pinned: boolean) => undefined,
@@ -125,6 +138,9 @@ export function useWorkspaceCanvasActionRefs(): WorkspaceCanvasActionRefs {
     updateNoteTextRef,
     renameNoteTitleRef,
     updateWebsiteUrlRef,
+    updateRoleInputRef,
+    updateRoleProviderRef,
+    runRoleRef,
     setWebsitePinnedRef,
     setWebsiteSessionRef,
     runTaskAgentRef,

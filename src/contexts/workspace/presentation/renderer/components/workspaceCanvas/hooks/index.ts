@@ -18,6 +18,8 @@ export { useWorkspaceCanvasLifecycleBindings } from './useCanvasLifecycleBinding
 export { useWorkspaceCanvasShortcutActions } from './useCanvasShortcutActions'
 export { useWorkspaceCanvasMenuActions } from './useCanvasMenuActions'
 export { useWorkspaceCanvasRuntimeBindings } from './useCanvasRuntimeBindings'
+export { useWorkspaceCanvasRoleUi } from './useCanvasRoleUi'
+export { useWorkspaceCanvasRoleActions } from './useRoleActions'
 export { useWorkspaceCanvasSpaceMenuState } from './useCanvasSpaceMenuState'
 export { useWorkspaceCanvasTaskWindows } from './useCanvasTaskWindows'
 export { useWorkspaceCanvasViewModel } from './useCanvasViewModel'

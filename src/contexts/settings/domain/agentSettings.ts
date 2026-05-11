@@ -56,6 +56,8 @@ import type { QuickPhrase } from './quickPhrases'
 import { normalizeQuickPhrases } from './quickPhrases'
 import type { AgentEnvByProvider } from './agentEnv'
 import { normalizeAgentEnvByProvider } from './agentEnv'
+import type { ProjectRolesByWorkspaceId } from './projectRoles'
+import { normalizeProjectRolesByWorkspaceId } from './projectRoles'
 import { normalizeWebsiteWindowPolicy } from './websiteWindowSettings'
 import { DEFAULT_AGENT_SETTINGS } from './agentSettings.defaults'
 import {
@@ -129,6 +131,7 @@ export type { TaskPromptTemplate, TaskPromptTemplatesByWorkspaceId } from './tas
 export type { QuickCommand } from './quickCommands'
 export type { QuickPhrase } from './quickPhrases'
 export type { AgentEnvByProvider, AgentEnvRow } from './agentEnv'
+export type { ProjectRoleDefinition, ProjectRolesByWorkspaceId } from './projectRoles'
 export type { AgentExecutablePathOverrideByProvider } from './agentSettings.executables'
 export {
   resolveAgentExecutablePathOverride,
@@ -157,6 +160,7 @@ export interface AgentSettings {
   taskTagOptions: string[]
   taskPromptTemplates: TaskPromptTemplate[]
   taskPromptTemplatesByWorkspaceId: TaskPromptTemplatesByWorkspaceId
+  projectRolesByWorkspaceId: ProjectRolesByWorkspaceId
   quickCommands: QuickCommand[]
   quickPhrases: QuickPhrase[]
   agentEnvByProvider: AgentEnvByProvider
@@ -301,6 +305,9 @@ export function normalizeAgentSettings(value: unknown): AgentSettings {
   const taskPromptTemplatesByWorkspaceId = normalizeTaskPromptTemplatesByWorkspaceId(
     value.taskPromptTemplatesByWorkspaceId,
   )
+  const projectRolesByWorkspaceId = normalizeProjectRolesByWorkspaceId(
+    value.projectRolesByWorkspaceId,
+  )
   const quickCommands = normalizeQuickCommands(value.quickCommands)
   const quickPhrases = normalizeQuickPhrases(value.quickPhrases)
   const agentEnvByProvider = normalizeAgentEnvByProvider(value.agentEnvByProvider)
@@ -442,6 +449,7 @@ export function normalizeAgentSettings(value: unknown): AgentSettings {
     taskTagOptions,
     taskPromptTemplates,
     taskPromptTemplatesByWorkspaceId,
+    projectRolesByWorkspaceId,
     quickCommands,
     quickPhrases,
     agentEnvByProvider,

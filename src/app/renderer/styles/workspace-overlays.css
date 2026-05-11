@@ -157,6 +157,31 @@
   transform: rotate(90deg);
 }
 
+.workspace-context-menu__role-row .workspace-context-menu__split-main {
+  min-width: 0;
+}
+
+.workspace-context-menu__role-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 0 2px 3px 24px;
+}
+
+.workspace-context-menu__role-actions button {
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: calc(12px * var(--cove-ui-font-scale));
+}
+
+.workspace-context-menu__more {
+  transform: none;
+}
+
+.workspace-context-menu button:hover .workspace-context-menu__more {
+  transform: none;
+}
+
 .workspace-canvas-context-menu {
   z-index: 12;
   min-width: 188px;

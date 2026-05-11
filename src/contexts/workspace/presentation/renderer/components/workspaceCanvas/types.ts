@@ -155,6 +155,19 @@ export interface TaskCreatorState {
   error: string | null
 }
 
+export interface RoleCreatorState {
+  anchor: Point
+  mode: 'create' | 'edit'
+  roleId: string | null
+  name: string
+  description: string
+  promptTemplate: string
+  inputHint: string
+  outputFormat: string
+  isCreating: boolean
+  error: string | null
+}
+
 export interface TaskEditorState {
   nodeId: string
   initialTitle: string

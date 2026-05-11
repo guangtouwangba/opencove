@@ -238,4 +238,49 @@ describe('normalizeAgentSettings', () => {
         .experimentalRemoteWorkersEnabled,
     ).toBe(true)
   })
+
+  it('normalizes project roles by workspace and drops duplicate names', () => {
+    const settings = normalizeAgentSettings({
+      projectRolesByWorkspaceId: {
+        ' workspace-1 ': [
+          {
+            id: 'role-pm',
+            name: ' Product Manager ',
+            description: 'Owns requirements',
+            promptTemplate: 'Write product requirements.',
+            inputHint: 'Brief idea',
+            outputFormat: 'PRD',
+            createdAt: '2026-05-10T00:00:00.000Z',
+            updatedAt: '2026-05-10T00:00:00.000Z',
+          },
+          {
+            id: 'role-duplicate',
+            name: 'product manager',
+            promptTemplate: 'Ignored duplicate',
+          },
+          {
+            id: 'role-invalid',
+            name: 'Invalid',
+            promptTemplate: '',
+          },
+        ],
+        'workspace-empty': [],
+      },
+    })
+
+    expect(settings.projectRolesByWorkspaceId).toEqual({
+      'workspace-1': [
+        {
+          id: 'role-pm',
+          name: 'Product Manager',
+          description: 'Owns requirements',
+          promptTemplate: 'Write product requirements.',
+          inputHint: 'Brief idea',
+          outputFormat: 'PRD',
+          createdAt: '2026-05-10T00:00:00.000Z',
+          updatedAt: '2026-05-10T00:00:00.000Z',
+        },
+      ],
+    })
+  })
 })

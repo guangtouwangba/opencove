@@ -84,13 +84,15 @@ export function toPersistedState(
           task:
             node.data.kind === 'note'
               ? node.data.note
-              : node.data.kind === 'image'
-                ? node.data.image
-                : node.data.kind === 'document'
-                  ? node.data.document
-                  : node.data.kind === 'website'
-                    ? node.data.website
-                    : node.data.task,
+              : node.data.kind === 'role'
+                ? (node.data.role ?? null)
+                : node.data.kind === 'image'
+                  ? node.data.image
+                  : node.data.kind === 'document'
+                    ? node.data.document
+                    : node.data.kind === 'website'
+                      ? node.data.website
+                      : node.data.task,
         }
       }),
     })),

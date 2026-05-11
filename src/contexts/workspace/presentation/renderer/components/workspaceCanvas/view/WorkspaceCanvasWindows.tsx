@@ -4,6 +4,7 @@ import { NodeDeleteConfirmationWindow } from '../windows/NodeDeleteConfirmationW
 import { SpaceWorktreeMismatchDropWarningWindow } from '../windows/SpaceWorktreeMismatchDropWarningWindow'
 import { SpaceTargetMountPickerWindow } from '../windows/SpaceTargetMountPickerWindow'
 import { SpaceWorktreeWindow } from '../windows/SpaceWorktreeWindow'
+import { RoleCreatorWindow } from '../windows/RoleCreatorWindow'
 import { TaskCreatorWindow } from '../windows/TaskCreatorWindow'
 import { TaskEditorWindow } from '../windows/TaskEditorWindow'
 
@@ -16,6 +17,10 @@ export function WorkspaceCanvasWindows({
   closeTaskCreator,
   generateTaskTitle,
   createTask,
+  roleCreator,
+  setRoleCreator,
+  closeRoleCreator,
+  createRole,
   taskEditor,
   setTaskEditor,
   closeTaskEditor,
@@ -53,6 +58,10 @@ export function WorkspaceCanvasWindows({
   | 'closeTaskCreator'
   | 'generateTaskTitle'
   | 'createTask'
+  | 'roleCreator'
+  | 'setRoleCreator'
+  | 'closeRoleCreator'
+  | 'createRole'
   | 'taskEditor'
   | 'setTaskEditor'
   | 'closeTaskEditor'
@@ -92,6 +101,13 @@ export function WorkspaceCanvasWindows({
         closeTaskCreator={closeTaskCreator}
         generateTaskTitle={generateTaskTitle}
         createTask={createTask}
+      />
+
+      <RoleCreatorWindow
+        roleCreator={roleCreator}
+        setRoleCreator={setRoleCreator}
+        closeRoleCreator={closeRoleCreator}
+        createRole={createRole}
       />
 
       <TaskEditorWindow

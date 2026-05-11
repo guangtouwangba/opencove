@@ -331,6 +331,91 @@ describe('workspace persistence (read/normalize)', () => {
     expect(restored?.workspaces[0].activeSpaceId).toBe('space-1')
   })
 
+  it('normalizes persisted role nodes and project role settings', async () => {
+    await writeRawPersistedState(
+      JSON.stringify({
+        activeWorkspaceId: 'workspace-1',
+        workspaces: [
+          {
+            id: 'workspace-1',
+            name: 'cove',
+            path: '/tmp/cove',
+            nodes: [
+              {
+                id: 'node-role',
+                title: 'Product Manager',
+                position: { x: 120, y: 140 },
+                width: 360,
+                height: 320,
+                kind: 'role',
+                status: null,
+                startedAt: null,
+                endedAt: null,
+                exitCode: null,
+                lastError: null,
+                scrollback: null,
+                agent: null,
+                task: {
+                  roleId: 'role-pm',
+                  roleName: 'Product Manager',
+                  roleDescription: 'Own requirements',
+                  promptTemplate: 'Write product requirements.',
+                  inputHint: 'Feature brief',
+                  outputFormat: 'PRD',
+                  input: 'Build role chaining.',
+                  selectedProvider: 'claude-code',
+                  linkedAgentNodeId: 'node-agent',
+                  runHistory: [
+                    {
+                      id: 'run-1',
+                      input: 'Build role chaining.',
+                      prompt: 'Write product requirements.',
+                      outputFormat: 'PRD',
+                      provider: 'claude-code',
+                      agentNodeId: 'node-agent',
+                      sessionId: 'session-agent',
+                      createdAt: '2026-05-10T00:00:00.000Z',
+                    },
+                  ],
+                  createdAt: '2026-05-10T00:00:00.000Z',
+                  updatedAt: '2026-05-10T00:00:00.000Z',
+                },
+              },
+            ],
+          },
+        ],
+        settings: {
+          projectRolesByWorkspaceId: {
+            'workspace-1': [
+              {
+                id: 'role-pm',
+                name: 'Product Manager',
+                promptTemplate: 'Write product requirements.',
+              },
+            ],
+          },
+        },
+      }),
+    )
+
+    const restored = await readPersistedState()
+    const roleNode = restored?.workspaces[0]?.nodes[0]
+
+    expect(roleNode?.kind).toBe('role')
+    expect(roleNode?.task).toMatchObject({
+      roleId: 'role-pm',
+      roleName: 'Product Manager',
+      input: 'Build role chaining.',
+      selectedProvider: 'claude-code',
+      linkedAgentNodeId: 'node-agent',
+    })
+    expect(restored?.settings.projectRolesByWorkspaceId['workspace-1']?.[0]).toMatchObject({
+      id: 'role-pm',
+      name: 'Product Manager',
+      promptTemplate: 'Write product requirements.',
+    })
+  })
+
   it('clamps space archive records to 50 items when reading', async () => {
     const spaceArchiveRecords = Array.from({ length: 55 }, (_, index) => ({
       id: `archive-${index}`,

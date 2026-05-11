@@ -1,0 +1,120 @@
+import type { MutableRefObject } from 'react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { WorkspaceSpaceState } from '../../../src/contexts/workspace/presentation/renderer/types'
+import {
+  launchWorkspaceAgentSession,
+  resolveWorkspaceAgentLaunchBinding,
+} from '../../../src/contexts/workspace/presentation/renderer/components/workspaceCanvas/hooks/useWorkspaceAgentLaunch.shared'
+
+function createSpacesRef(spaces: WorkspaceSpaceState[]): MutableRefObject<WorkspaceSpaceState[]> {
+  return { current: spaces }
+}
+
+describe('workspaceAgentLaunch.shared', () => {
+  beforeEach(() => {
+    window.opencoveApi = {
+      controlSurface: {
+        invoke: vi.fn(),
+      },
+      agent: {
+        launch: vi.fn(),
+      },
+    } as typeof window.opencoveApi
+  })
+
+  it('repairs missing Space mount bindings using the best matching mount', async () => {
+    const invoke = vi.mocked(window.opencoveApi.controlSurface.invoke)
+    invoke.mockResolvedValueOnce({
+      mounts: [
+        { mountId: 'mount-root', rootPath: '/project' },
+        { mountId: 'mount-api', rootPath: '/project/apps/api' },
+      ],
+    })
+
+    const spacesRef = createSpacesRef([
+      {
+        id: 'space-1',
+        name: 'API',
+        directoryPath: '/project/apps/api',
+        targetMountId: null,
+        labelColor: null,
+        nodeIds: ['role-node-1'],
+        rect: null,
+      },
+    ])
+    const onSpacesChange = vi.fn((spaces: WorkspaceSpaceState[]) => {
+      spacesRef.current = spaces
+    })
+
+    const binding = await resolveWorkspaceAgentLaunchBinding({
+      workspaceId: 'workspace-1',
+      workspacePath: '/project',
+      currentMountId: null,
+      executionDirectory: '/project/apps/api',
+      targetSpace: spacesRef.current[0],
+      spacesRef,
+      onSpacesChange,
+    })
+
+    expect(binding).toEqual({
+      mountId: 'mount-api',
+      executionDirectory: '/project/apps/api',
+    })
+    expect(onSpacesChange).toHaveBeenCalledTimes(1)
+    expect(spacesRef.current[0]?.targetMountId).toBe('mount-api')
+  })
+
+  it('retries mount launches after refreshing the mount binding', async () => {
+    const invoke = vi.mocked(window.opencoveApi.controlSurface.invoke)
+    invoke.mockRejectedValueOnce(new Error('stale mount')).mockResolvedValueOnce({
+      sessionId: 'session-2',
+      profileId: 'profile-1',
+      runtimeKind: 'posix',
+      effectiveModel: 'gpt-5.2-codex',
+      executionContext: {
+        workingDirectory: '/remote/project',
+      },
+    })
+
+    const launched = await launchWorkspaceAgentSession({
+      mountId: 'mount-stale',
+      executionDirectory: '/project',
+      prompt: 'Implement the feature.',
+      provider: 'codex',
+      mode: 'new',
+      model: 'gpt-5.2-codex',
+      executablePathOverride: null,
+      mergedEnv: {},
+      agentSettings: {
+        agentFullAccess: true,
+        defaultTerminalProfileId: null,
+      },
+      launchGeometry: {
+        terminalGeometry: { cols: 120, rows: 40 },
+      },
+      retryResolveMountBinding: async failedMountId => {
+        expect(failedMountId).toBe('mount-stale')
+        return {
+          mountId: 'mount-fresh',
+          executionDirectory: '/project',
+        }
+      },
+    })
+
+    expect(launched).toEqual({
+      sessionId: 'session-2',
+      profileId: 'profile-1',
+      runtimeKind: 'posix',
+      effectiveModel: 'gpt-5.2-codex',
+      executionDirectory: '/remote/project',
+    })
+    expect(invoke).toHaveBeenCalledTimes(2)
+    expect(invoke.mock.calls[1]?.[0]).toMatchObject({
+      kind: 'command',
+      id: 'session.launchAgentInMount',
+      payload: {
+        mountId: 'mount-fresh',
+      },
+    })
+  })
+})
