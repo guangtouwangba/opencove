@@ -1,10 +1,6 @@
-import { expect, test, type Locator } from '@playwright/test'
-import {
-  buildEchoSequenceCommand,
-  clearAndSeedWorkspace,
-  launchApp,
-  testWorkspacePath,
-} from './workspace-canvas.helpers'
+import { expect, test } from '@playwright/test'
+import { clearAndSeedWorkspace, launchApp, testWorkspacePath } from './workspace-canvas.helpers'
+import { assertTerminalScrollbarGutterSurface } from './workspace-canvas.terminal-scrollbar-gutter.helpers'
 
 test.describe('Workspace Canvas - Terminal scrollbar gutter', () => {
   test('removes xterm native scrollbar + black viewport background (terminal + agent)', async () => {
@@ -18,13 +14,13 @@ test.describe('Workspace Canvas - Terminal scrollbar gutter', () => {
             id: 'node-a',
             title: 'terminal-a',
             position: { x: 180, y: 140 },
-            width: 520,
+            width: 816,
             height: 320,
           },
           {
             id: 'node-b',
             title: 'codex · gpt-5.2-codex',
-            position: { x: 760, y: 140 },
+            position: { x: 180, y: 520 },
             width: 520,
             height: 320,
             kind: 'agent',
@@ -58,11 +54,7 @@ test.describe('Workspace Canvas - Terminal scrollbar gutter', () => {
       )
 
       await expect
-        .poll(() =>
-          window.evaluate(() => {
-            return document.documentElement.dataset.coveTheme ?? null
-          }),
-        )
+        .poll(() => window.evaluate(() => document.documentElement.dataset.coveTheme ?? null))
         .toBe('light')
 
       const nodes = window.locator('.terminal-node')
@@ -70,152 +62,8 @@ test.describe('Workspace Canvas - Terminal scrollbar gutter', () => {
       await expect(nodes.nth(0).locator('.xterm')).toBeVisible()
       await expect(nodes.nth(1).locator('.xterm')).toBeVisible()
 
-      const assertTerminalSurface = async (nodeId: string, node: Locator) => {
-        const xterm = node.locator('.xterm')
-        const tailToken = `OPENCOVE_SCROLLBAR_GUTTER_${nodeId}_220`
-        await xterm.click()
-        await expect(node.locator('.xterm-helper-textarea')).toBeFocused()
-        await window.keyboard.type(
-          buildEchoSequenceCommand(`OPENCOVE_SCROLLBAR_GUTTER_${nodeId}`, 220),
-        )
-        await window.keyboard.press('Enter')
-        await expect(node).toContainText(tailToken, { timeout: 20_000 })
-
-        const scrollbar = node.locator('.xterm-scrollable-element .scrollbar.vertical')
-        const slider = scrollbar.locator('.slider')
-        await expect(slider).toBeVisible({ timeout: 20_000 })
-
-        const viewport = node.locator('.xterm-viewport')
-        await expect(viewport).toBeVisible()
-        await expect(viewport).toHaveCSS('overflow-y', 'hidden')
-        await expect(viewport).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
-
-        const terminalBody = node.locator('.terminal-node__terminal')
-        await expect(terminalBody).toBeVisible()
-        await expect(terminalBody).not.toHaveCSS('background-color', 'rgb(0, 0, 0)')
-
-        await expect
-          .poll(
-            async () =>
-              await window.evaluate(id => {
-                const api = window.__opencoveTerminalSelectionTestApi
-                if (!api) {
-                  return { ok: false as const, reason: 'missing test api' }
-                }
-
-                const size = api.getSize(id)
-                if (!size) {
-                  return { ok: false as const, reason: 'missing terminal size' }
-                }
-
-                // Electron/Linux CI can land the lower-right interior cell center directly on the
-                // scrollbar or resize-handle boundary because of subpixel rounding and overlay
-                // hitboxes. Step one more cell inward on both axes so we still validate the
-                // lower-right content area without depending on those borders.
-                const targetCol = Math.max(size.cols - 2, 1)
-                const targetRow = Math.max(size.rows - 2, 1)
-                const center = api.getCellCenter(id, targetCol, targetRow)
-                if (!center) {
-                  return { ok: false as const, reason: 'missing cell center' }
-                }
-
-                const nodeElement = document.querySelector(
-                  `.react-flow__node[data-id="${id}"] .terminal-node`,
-                )
-                if (!(nodeElement instanceof HTMLElement)) {
-                  return { ok: false as const, reason: 'missing terminal node' }
-                }
-
-                const terminalSurface = nodeElement.querySelector('.terminal-node__terminal')
-                const viewportElement = nodeElement.querySelector('.xterm-viewport')
-                const screenElement = nodeElement.querySelector('.xterm-screen')
-                const scrollbarElement = nodeElement.querySelector(
-                  '.xterm-scrollable-element .scrollbar.vertical',
-                )
-                const resizers = Array.from(nodeElement.querySelectorAll('.terminal-node__resizer'))
-
-                if (!(terminalSurface instanceof HTMLElement)) {
-                  return { ok: false as const, reason: 'missing terminal surface' }
-                }
-
-                if (!(viewportElement instanceof HTMLElement)) {
-                  return { ok: false as const, reason: 'missing viewport' }
-                }
-
-                if (!(screenElement instanceof HTMLElement)) {
-                  return { ok: false as const, reason: 'missing screen' }
-                }
-
-                const pointInsideRect = (
-                  rect: DOMRect,
-                  point: { x: number; y: number },
-                  inset = 0,
-                ): boolean => {
-                  return (
-                    point.x >= rect.left + inset &&
-                    point.x <= rect.right - inset &&
-                    point.y >= rect.top + inset &&
-                    point.y <= rect.bottom - inset
-                  )
-                }
-
-                const hitTarget = document.elementFromPoint(center.x, center.y)
-                if (!hitTarget) {
-                  return { ok: false as const, reason: 'missing hit target' }
-                }
-
-                return {
-                  ok: true as const,
-                  size,
-                  targetCol,
-                  targetRow,
-                  point: center,
-                  tagName: hitTarget.tagName,
-                  className: hitTarget instanceof HTMLElement ? hitTarget.className : '',
-                  insideTerminalBounds: pointInsideRect(
-                    terminalSurface.getBoundingClientRect(),
-                    center,
-                    0.5,
-                  ),
-                  insideViewportBounds: pointInsideRect(
-                    viewportElement.getBoundingClientRect(),
-                    center,
-                    0.5,
-                  ),
-                  insideScreenBounds: pointInsideRect(
-                    screenElement.getBoundingClientRect(),
-                    center,
-                    0.5,
-                  ),
-                  insideScrollbarBounds:
-                    scrollbarElement instanceof HTMLElement
-                      ? pointInsideRect(scrollbarElement.getBoundingClientRect(), center, 0.5)
-                      : false,
-                  insideResizerBounds: resizers.some(resizer =>
-                    resizer instanceof HTMLElement
-                      ? pointInsideRect(resizer.getBoundingClientRect(), center, 0.5)
-                      : false,
-                  ),
-                  insideScrollbar:
-                    hitTarget.closest('.xterm-scrollable-element .scrollbar.vertical') !== null,
-                  insideResizer: hitTarget.closest('.terminal-node__resizer') !== null,
-                  insideScreen: hitTarget.closest('.xterm-screen') !== null,
-                  insideViewport: hitTarget.closest('.xterm-viewport') !== null,
-                  insideTerminal: hitTarget.closest('.terminal-node__terminal') !== null,
-                }
-              }, nodeId),
-            { timeout: 5_000 },
-          )
-          .toMatchObject({
-            ok: true,
-            insideScreenBounds: true,
-            insideScrollbarBounds: false,
-            insideResizerBounds: false,
-          })
-      }
-
-      await assertTerminalSurface('node-a', nodes.nth(0))
-      await assertTerminalSurface('node-b', nodes.nth(1))
+      await assertTerminalScrollbarGutterSurface(window, 'node-a', nodes.nth(0))
+      await assertTerminalScrollbarGutterSurface(window, 'node-b', nodes.nth(1))
     } finally {
       await electronApp.close()
     }

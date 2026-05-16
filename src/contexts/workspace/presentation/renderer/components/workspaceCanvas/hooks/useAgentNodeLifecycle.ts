@@ -16,6 +16,7 @@ import {
 } from '../../../utils/agentResumeBinding'
 import { invalidateCachedTerminalScreenState } from '../../terminalNode/screenStateCache'
 import { toErrorMessage } from '../helpers'
+import type { TerminalPtyGeometryDisplayMetrics } from '@contexts/workspace/domain/terminalPtyGeometry'
 import { resolveSpaceMountLaunchContext } from './spaceMountLaunchContext'
 import {
   buildAgentNodeTitle as formatAgentNodeTitle,
@@ -44,6 +45,7 @@ interface UseAgentNodeLifecycleParams {
   agentFullAccess: boolean
   defaultTerminalProfileId: string | null
   terminalFontSize: number
+  terminalDisplayMetrics: TerminalPtyGeometryDisplayMetrics
   agentEnvByProvider: AgentEnvByProvider
   agentExecutablePathOverrideByProvider?: AgentExecutablePathOverrideByProvider
   environmentVariables?: Record<string, string>
@@ -66,14 +68,8 @@ export function useWorkspaceCanvasAgentNodeLifecycle({
   agentExecutablePathOverrideByProvider,
   environmentVariables,
   onRequestPersistFlush,
-}: UseAgentNodeLifecycleParams): {
-  buildAgentNodeTitle: (provider: AgentNodeData['provider'], label: string | null) => string
-  launchAgentInNode: (nodeId: string, mode: 'new' | 'resume') => Promise<void>
-  reloadAgentNode: (nodeId: string) => Promise<void>
-  listAgentSessionsForNode: (nodeId: string, limit?: number) => Promise<AgentSessionSummary[]>
-  switchAgentNodeSession: (nodeId: string, summary: AgentSessionSummary) => Promise<void>
-  stopAgentNode: (nodeId: string) => Promise<void>
-} {
+  terminalDisplayMetrics,
+}: UseAgentNodeLifecycleParams) {
   const { t } = useTranslation()
 
   const buildAgentNodeTitle = useCallback(
@@ -257,6 +253,7 @@ export function useWorkspaceCanvasAgentNodeLifecycle({
           defaultTerminalProfileId,
           executablePathOverride,
           terminalFontSize,
+          terminalDisplayMetrics,
         })
 
         if (!isAgentLaunchTokenCurrent(nodeId, launchToken)) {
@@ -353,6 +350,7 @@ export function useWorkspaceCanvasAgentNodeLifecycle({
       agentExecutablePathOverrideByProvider,
       agentFullAccess,
       defaultTerminalProfileId,
+      terminalDisplayMetrics,
       terminalFontSize,
     ],
   )

@@ -3,10 +3,7 @@ import { useStore } from '@xyflow/react'
 import type { FitAddon } from '@xterm/addon-fit'
 import type { Terminal } from '@xterm/xterm'
 import { createTerminalCommandInputState } from './terminalNode/commandInput'
-import {
-  commitTerminalNodeGeometry,
-  refreshTerminalNodeSize,
-} from './terminalNode/syncTerminalNodeSize'
+import { refreshTerminalNodeSize } from './terminalNode/syncTerminalNodeSize'
 import {
   captureTerminalScrollState,
   type TerminalScrollStateSnapshot,
@@ -24,6 +21,7 @@ import type { TerminalOutputScheduler } from './terminalNode/outputScheduler'
 import { useTerminalRuntimeSession } from './terminalNode/useTerminalRuntimeSession'
 import { useTerminalPlaceholderSession } from './terminalNode/useTerminalPlaceholderSession'
 import { useWebglCanvasTransformCleanupScheduler } from './terminalNode/useWebglCanvasTransformCleanupScheduler'
+import { useCommittedTerminalGeometry } from './terminalNode/useCommittedTerminalGeometry'
 import type { XtermSession } from './terminalNode/xtermSession'
 import { invalidateCachedTerminalScreenState } from './terminalNode/screenStateCache'
 import type { PreferredTerminalRendererMode } from './terminalNode/preferredRenderer'
@@ -131,6 +129,16 @@ export function TerminalNode({
   const displayTerminalFontSize = terminalDisplayCalibration?.fontSize ?? terminalFontSize
   const displayTerminalLineHeight = terminalDisplayCalibration?.lineHeight ?? 1
   const displayTerminalLetterSpacing = terminalDisplayCalibration?.letterSpacing ?? 0
+  const displayTerminalMetricsRef = useRef({
+    fontSize: displayTerminalFontSize,
+    lineHeight: displayTerminalLineHeight,
+    letterSpacing: displayTerminalLetterSpacing,
+  })
+  displayTerminalMetricsRef.current = {
+    fontSize: displayTerminalFontSize,
+    lineHeight: displayTerminalLineHeight,
+    letterSpacing: displayTerminalLetterSpacing,
+  }
 
   latestSessionIdRef.current = sessionId
 
@@ -254,26 +262,17 @@ export function TerminalNode({
     scheduleWebglCanvasTransformCleanup()
   }, [scheduleWebglCanvasTransformCleanup])
 
-  const commitTerminalGeometry = useCallback(
-    (reason: 'frame_commit' | 'appearance_commit') => {
-      if (suppressPtyResizeRef.current) {
-        syncTerminalSize()
-        return
-      }
-
-      commitTerminalNodeGeometry({
-        terminalRef,
-        fitAddonRef,
-        containerRef,
-        isPointerResizingRef,
-        lastCommittedPtySizeRef,
-        sessionId,
-        reason,
-      })
-      scheduleWebglCanvasTransformCleanup()
-    },
-    [scheduleWebglCanvasTransformCleanup, sessionId, syncTerminalSize],
-  )
+  const commitTerminalGeometry = useCommittedTerminalGeometry({
+    terminalRef,
+    fitAddonRef,
+    containerRef,
+    isPointerResizingRef,
+    lastCommittedPtySizeRef,
+    suppressPtyResizeRef,
+    latestSessionIdRef,
+    sessionId,
+    scheduleWebglCanvasTransformCleanup,
+  })
 
   const requestTerminalRendererRecovery = useCallback(
     ({ forceDom }: TerminalRendererRecoveryRequest) => {
@@ -360,9 +359,11 @@ export function TerminalNode({
     cancelWebglCanvasTransformCleanup,
     setRendererKindAndApply,
     terminalFontSize,
+    terminalFontFamily,
     viewportZoomRef,
     preferredRendererMode,
     terminalClientResetVersion,
+    displayTerminalMetricsRef,
   })
 
   useTerminalRuntimeSession({
@@ -409,6 +410,8 @@ export function TerminalNode({
     cancelWebglCanvasTransformCleanup,
     setRendererKindAndApply,
     terminalFontSize,
+    terminalFontFamily,
+    displayTerminalMetricsRef,
     viewportZoomRef,
     preferredRendererMode,
     terminalClientResetVersion,
@@ -425,6 +428,7 @@ export function TerminalNode({
     displayTerminalFontSize,
     displayTerminalLineHeight,
     displayTerminalLetterSpacing,
+    commitInitialDisplayGeometry: terminalDisplayCalibration !== null,
     terminalFontFamily,
     width,
     height,

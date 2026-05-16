@@ -5,10 +5,7 @@ import {
   isAuthoritativeHydrationBaselineSource,
   prepareRuntimePresentationAttach,
   requestPresentationSnapshotAfterGeometry,
-  shouldAwaitRestoredAgentVisibleOutput,
-  shouldGateRestoredAgentInput,
   shouldProtectHydratedAgentHistory,
-  shouldRequirePostGeometrySnapshotOutput,
   shouldReusePreservedXtermSession,
   shouldTreatHydratedAgentBaselineAsPlaceholder,
 } from '../../../src/contexts/workspace/presentation/renderer/components/terminalNode/useTerminalRuntimeSession.support'
@@ -69,106 +66,6 @@ describe('useTerminalRuntimeSession support', () => {
         agentLaunchMode: 'resume',
         persistedSnapshot: '[restored history]',
         baselineSource: 'empty',
-      }),
-    ).toBe(false)
-  })
-
-  it('gates restored agent input until live output catches up', () => {
-    expect(
-      shouldGateRestoredAgentInput({
-        kind: 'agent',
-        persistedSnapshot: '',
-        agentResumeSessionIdVerified: true,
-        agentLaunchMode: 'resume',
-      }),
-    ).toBe(true)
-
-    expect(
-      shouldAwaitRestoredAgentVisibleOutput({
-        kind: 'agent',
-        agentResumeSessionIdVerified: true,
-        agentLaunchMode: 'resume',
-      }),
-    ).toBe(true)
-
-    expect(
-      shouldGateRestoredAgentInput({
-        kind: 'agent',
-        persistedSnapshot: '',
-        agentResumeSessionIdVerified: true,
-        agentLaunchMode: 'resume',
-      }),
-    ).toBe(true)
-
-    expect(
-      shouldGateRestoredAgentInput({
-        kind: 'agent',
-        persistedSnapshot: '',
-        agentResumeSessionIdVerified: false,
-        agentLaunchMode: 'new',
-      }),
-    ).toBe(true)
-
-    expect(
-      shouldAwaitRestoredAgentVisibleOutput({
-        kind: 'agent',
-        agentResumeSessionIdVerified: false,
-        agentLaunchMode: 'new',
-      }),
-    ).toBe(true)
-
-    expect(
-      shouldAwaitRestoredAgentVisibleOutput({
-        kind: 'terminal',
-        agentResumeSessionIdVerified: true,
-        agentLaunchMode: 'resume',
-      }),
-    ).toBe(false)
-  })
-
-  it('requires post-geometry visible snapshots for cold agent hydration', () => {
-    expect(
-      shouldRequirePostGeometrySnapshotOutput({
-        kind: 'agent',
-        isLiveSessionReattach: false,
-        agentResumeSessionIdVerified: true,
-        agentLaunchMode: 'resume',
-      }),
-    ).toBe(true)
-
-    expect(
-      shouldRequirePostGeometrySnapshotOutput({
-        kind: 'agent',
-        isLiveSessionReattach: false,
-        agentResumeSessionIdVerified: false,
-        agentLaunchMode: 'resume',
-      }),
-    ).toBe(true)
-
-    expect(
-      shouldRequirePostGeometrySnapshotOutput({
-        kind: 'agent',
-        isLiveSessionReattach: true,
-        agentResumeSessionIdVerified: true,
-        agentLaunchMode: 'resume',
-      }),
-    ).toBe(false)
-
-    expect(
-      shouldRequirePostGeometrySnapshotOutput({
-        kind: 'agent',
-        isLiveSessionReattach: false,
-        agentResumeSessionIdVerified: false,
-        agentLaunchMode: 'new',
-      }),
-    ).toBe(true)
-
-    expect(
-      shouldRequirePostGeometrySnapshotOutput({
-        kind: 'terminal',
-        isLiveSessionReattach: false,
-        agentResumeSessionIdVerified: true,
-        agentLaunchMode: 'resume',
       }),
     ).toBe(false)
   })
@@ -488,6 +385,43 @@ describe('useTerminalRuntimeSession support', () => {
     const snapshot = await presentationSnapshotPromise
 
     expect(snapshot).toBe(baselineSnapshot)
+    expect(attach).toHaveBeenCalledWith({ sessionId: 'session-1', afterSeq: 42 })
+    expect(commitInitialGeometry).toHaveBeenCalledWith(baselineSnapshot)
+    expect(presentationSnapshot).toHaveBeenCalledTimes(2)
+  })
+
+  it('still reconciles local measured geometry after a live reattach baseline is attached', async () => {
+    const baselineSnapshot = createPresentationSnapshot(97, 40, 42)
+    const committedSnapshot = createPresentationSnapshot(104, 41, 43)
+    const presentationSnapshot = vi
+      .fn()
+      .mockResolvedValueOnce(baselineSnapshot)
+      .mockResolvedValueOnce(committedSnapshot)
+    const attach = vi.fn(async () => undefined)
+    const commitInitialGeometry = vi.fn(async () => ({ cols: 104, rows: 41, changed: true }))
+
+    vi.stubGlobal('window', {
+      opencoveApi: {
+        pty: {
+          presentationSnapshot,
+        },
+      },
+    })
+
+    const { attachPromise, presentationSnapshotPromise } = prepareRuntimePresentationAttach({
+      ptyApi: {
+        attach,
+      } as never,
+      sessionId: 'session-1',
+      isLiveSessionReattach: true,
+      commitInitialGeometry,
+      requirePostGeometrySnapshotOutput: false,
+    })
+
+    await attachPromise
+    const snapshot = await presentationSnapshotPromise
+
+    expect(snapshot).toBe(committedSnapshot)
     expect(attach).toHaveBeenCalledWith({ sessionId: 'session-1', afterSeq: 42 })
     expect(commitInitialGeometry).toHaveBeenCalledWith(baselineSnapshot)
     expect(presentationSnapshot).toHaveBeenCalledTimes(2)
