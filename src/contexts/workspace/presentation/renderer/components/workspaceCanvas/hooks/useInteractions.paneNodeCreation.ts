@@ -26,6 +26,10 @@ import {
 import { createNoteNodeAtAnchor } from './useInteractions.noteCreation'
 import { resolveTerminalLaunchWorkspaceContext } from './useInteractions.paneNodeCreation.terminalLaunch'
 import { resolveSpaceMountLaunchContext } from './spaceMountLaunchContext'
+import {
+  resolveControlSurfaceInvoke,
+  shouldUseControlSurfacePlainRuntime,
+} from './useWorkspaceRuntimeLaunchRouting'
 import { translate } from '@app/renderer/i18n'
 import { createWebsiteNodeData } from '../../../utils/websiteNodeData'
 
@@ -84,6 +88,7 @@ export async function createTerminalNodeAtFlowPosition({
   })
 
   let targetSpace = findContainingSpaceByAnchor(spacesRef.current, cursorAnchor)
+  const targetSpaceBaseline = targetSpace
   const launchWorkspaceContext = await resolveTerminalLaunchWorkspaceContext({
     anchor: cursorAnchor,
     workspaceId,
@@ -91,9 +96,13 @@ export async function createTerminalNodeAtFlowPosition({
     targetSpace,
   })
   targetSpace = launchWorkspaceContext.targetSpace
+  const workspaceSpacesSnapshot = launchWorkspaceContext.workspaceSpacesSnapshot
   const resolvedWorkspacePath = launchWorkspaceContext.workspacePath
   const shouldFallbackToFirstMount =
     !targetSpace && isAllocateProjectPlaceholderPath(resolvedWorkspacePath, workspaceId)
+  const launchSpaces = targetSpace
+    ? mergeMissingWorkspaceSpaces(spacesRef.current, workspaceSpacesSnapshot, targetSpace.id)
+    : spacesRef.current
   let mountId: string | null = null
   let resolvedCwd = resolvedWorkspacePath
 
@@ -102,7 +111,7 @@ export async function createTerminalNodeAtFlowPosition({
       workspaceId,
       workspacePath: resolvedWorkspacePath,
       space: targetSpace,
-      spaces: spacesRef.current,
+      spaces: launchSpaces,
       onSpacesChange,
       onRequestPersistFlush,
       fallbackToFirstMount: shouldFallbackToFirstMount,
@@ -122,6 +131,14 @@ export async function createTerminalNodeAtFlowPosition({
     mountId && resolvedCwd.trim().length > 0 ? toFileUri(resolvedCwd.trim()) : null
 
   const nodeWorkingDirectory = resolvedCwd
+  const controlSurfaceInvoke = resolveControlSurfaceInvoke()
+  const shouldUseControlSurfacePlainSpawn =
+    !mountId &&
+    controlSurfaceInvoke !== null &&
+    shouldUseControlSurfacePlainRuntime({
+      workspacePath: resolvedWorkspacePath,
+      executionDirectory: resolvedCwd,
+    })
 
   let spawned: SpawnTerminalResult
 
@@ -141,15 +158,29 @@ export async function createTerminalNodeAtFlowPosition({
               : {}),
           },
         })
-      : await window.opencoveApi.pty.spawn({
-          cwd: resolvedCwd,
-          profileId: defaultTerminalProfileId ?? undefined,
-          cols: launchGeometry.cols,
-          rows: launchGeometry.rows,
-          ...(environmentVariables && Object.keys(environmentVariables).length > 0
-            ? { env: environmentVariables }
-            : {}),
-        })
+      : shouldUseControlSurfacePlainSpawn
+        ? await controlSurfaceInvoke<SpawnTerminalResult>({
+            kind: 'command',
+            id: 'pty.spawn',
+            payload: {
+              cwd: resolvedCwd,
+              profileId: defaultTerminalProfileId,
+              cols: launchGeometry.cols,
+              rows: launchGeometry.rows,
+              ...(environmentVariables && Object.keys(environmentVariables).length > 0
+                ? { env: environmentVariables }
+                : {}),
+            },
+          })
+        : await window.opencoveApi.pty.spawn({
+            cwd: resolvedCwd,
+            profileId: defaultTerminalProfileId ?? undefined,
+            cols: launchGeometry.cols,
+            rows: launchGeometry.rows,
+            ...(environmentVariables && Object.keys(environmentVariables).length > 0
+              ? { env: environmentVariables }
+              : {}),
+          })
   } catch (error) {
     onShowMessage?.(
       translate('messages.terminalLaunchFailed', { message: toErrorMessage(error) }),
@@ -186,6 +217,9 @@ export async function createTerminalNodeAtFlowPosition({
     assignNodeToSpaceAndExpand({
       createdNodeId: created.id,
       targetSpaceId: targetSpace.id,
+      targetSpaceSnapshot: targetSpace,
+      targetSpaceBaseline,
+      workspaceSpacesSnapshot,
       spacesRef,
       nodesRef,
       setNodes,
@@ -194,6 +228,23 @@ export async function createTerminalNodeAtFlowPosition({
   }
 
   return { sessionId: spawned.sessionId, nodeId: created.id }
+}
+
+function mergeMissingWorkspaceSpaces(
+  spaces: WorkspaceSpaceState[],
+  workspaceSpacesSnapshot: WorkspaceSpaceState[] | null,
+  requiredSpaceId: string,
+): WorkspaceSpaceState[] {
+  if (!workspaceSpacesSnapshot?.some(space => space.id === requiredSpaceId)) {
+    return spaces
+  }
+
+  const existingSpaceIds = new Set(spaces.map(space => space.id))
+  if (existingSpaceIds.has(requiredSpaceId)) {
+    return spaces
+  }
+
+  return [...spaces, ...workspaceSpacesSnapshot.filter(space => !existingSpaceIds.has(space.id))]
 }
 
 export function createNoteNodeAtFlowPosition({

@@ -118,6 +118,7 @@ export function useWorkspaceCanvasAgentLauncher({
           }
           const launched = await launchWorkspaceAgentSession({
             mountId: initialBinding.mountId,
+            workspacePath,
             executionDirectory: initialBinding.executionDirectory,
             prompt: '',
             provider,
@@ -185,6 +186,7 @@ export function useWorkspaceCanvasAgentLauncher({
           assignNodeToSpaceAndExpand({
             createdNodeId: created.id,
             targetSpaceId: anchorSpace.id,
+            targetSpaceSnapshot: anchorSpace,
             spacesRef,
             nodesRef,
             setNodes,

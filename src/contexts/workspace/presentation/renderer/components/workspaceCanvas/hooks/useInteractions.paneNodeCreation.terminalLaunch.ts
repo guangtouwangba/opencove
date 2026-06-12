@@ -53,6 +53,24 @@ function resolveFallbackTargetSpace(
   )
 }
 
+function resolvePersistedTargetSpace(
+  workspace: PersistedAppState['workspaces'][number],
+  targetSpace: WorkspaceSpaceState | null,
+  anchor: Point,
+  options?: { allowWorkspaceFallback?: boolean },
+): WorkspaceSpaceState | null {
+  if (targetSpace) {
+    return workspace.spaces.find(space => space.id === targetSpace.id) ?? targetSpace
+  }
+
+  const anchorSpace = findContainingSpaceByAnchor(workspace.spaces, anchor)
+  if (anchorSpace || options?.allowWorkspaceFallback !== true) {
+    return anchorSpace
+  }
+
+  return resolveFallbackTargetSpace(workspace, anchor)
+}
+
 export async function resolveTerminalLaunchWorkspaceContext(options: {
   anchor: Point
   workspaceId: string
@@ -61,22 +79,20 @@ export async function resolveTerminalLaunchWorkspaceContext(options: {
 }): Promise<{
   workspacePath: string
   targetSpace: WorkspaceSpaceState | null
+  workspaceSpacesSnapshot: WorkspaceSpaceState[] | null
 }> {
   const normalizedWorkspacePath = options.workspacePath.trim()
-  if (
-    resolveSpaceWorkingDirectory(options.targetSpace, normalizedWorkspacePath).trim().length > 0
-  ) {
-    return {
-      workspacePath: normalizedWorkspacePath,
-      targetSpace: options.targetSpace,
-    }
-  }
+  const localWorkingDirectory = resolveSpaceWorkingDirectory(
+    options.targetSpace,
+    normalizedWorkspacePath,
+  ).trim()
 
   const readAppState = window.opencoveApi.persistence?.readAppState
   if (typeof readAppState !== 'function') {
     return {
       workspacePath: normalizedWorkspacePath,
       targetSpace: options.targetSpace,
+      workspaceSpacesSnapshot: null,
     }
   }
 
@@ -90,17 +106,22 @@ export async function resolveTerminalLaunchWorkspaceContext(options: {
       return {
         workspacePath: normalizedWorkspacePath,
         targetSpace: options.targetSpace,
+        workspaceSpacesSnapshot: null,
       }
     }
 
     return {
       workspacePath: workspace.path,
-      targetSpace: options.targetSpace ?? resolveFallbackTargetSpace(workspace, options.anchor),
+      targetSpace: resolvePersistedTargetSpace(workspace, options.targetSpace, options.anchor, {
+        allowWorkspaceFallback: localWorkingDirectory.length === 0,
+      }),
+      workspaceSpacesSnapshot: workspace.spaces,
     }
   } catch {
     return {
       workspacePath: normalizedWorkspacePath,
       targetSpace: options.targetSpace,
+      workspaceSpacesSnapshot: null,
     }
   }
 }

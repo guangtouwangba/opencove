@@ -1,6 +1,10 @@
 import type { MountDto } from '@shared/contracts/dto'
 import type { SpaceBoundary } from '@shared/types/spaceBoundary'
-import { isPathInsideOrEqual, resolveSpaceBoundaryScope } from './spaceBoundaryPolicy'
+import {
+  isPathInsideOrEqual,
+  normalizeComparablePath,
+  resolveSpaceBoundaryScope,
+} from './spaceBoundaryPolicy'
 
 export interface SpaceMountContextLike {
   directoryPath: string
@@ -28,16 +32,6 @@ function normalizeOptionalString(value: unknown): string | null {
 
   const trimmed = value.trim()
   return trimmed.length > 0 ? trimmed : null
-}
-
-function normalizeComparablePath(pathValue: string): string {
-  const normalized = pathValue
-    .trim()
-    .replace(/[\\/]+$/, '')
-    .replace(/\\/g, '/')
-  return /^[a-zA-Z]:\//.test(normalized) || normalized.startsWith('//')
-    ? normalized.toLowerCase()
-    : normalized
 }
 
 function isPathInside(rootPath: string, targetPath: string): boolean {
@@ -98,6 +92,27 @@ export function resolveSpaceMountContext(options: {
     boundaryScope !== null && isPathInside(fallbackMount.rootPath, boundaryScope.rootPath)
   const directoryWithinMount =
     rawDirectoryPath !== null && isPathInside(fallbackMount.rootPath, rawDirectoryPath)
+
+  if (
+    rawDirectoryPath !== null &&
+    currentTargetMountId !== null &&
+    mountById !== null &&
+    !isBoundaryScopeWithinMount &&
+    !directoryWithinMount
+  ) {
+    return {
+      mount: null,
+      workingDirectory: rawDirectoryPath,
+      scope: null,
+      repair: options.space
+        ? {
+            targetMountId: null,
+            directoryPath: rawDirectoryPath,
+          }
+        : null,
+    }
+  }
+
   const workingDirectory = isBoundaryScopeWithinMount
     ? boundaryScope.rootPath
     : directoryWithinMount

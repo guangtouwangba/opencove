@@ -12,6 +12,10 @@ import type {
   TerminalRuntimeKind,
 } from '@shared/contracts/dto'
 import type { WorkspaceSpaceState } from '../../../types'
+import {
+  resolveControlSurfaceInvoke,
+  shouldUseControlSurfacePlainRuntime,
+} from './useWorkspaceRuntimeLaunchRouting'
 
 export interface WorkspaceAgentLaunchBinding {
   mountId: string | null
@@ -86,7 +90,7 @@ export function resolveBestWorkspaceMount(
         normalizePathForMountComparison(a.rootPath).length,
     )
 
-  return matches[0] ?? mounts[0] ?? null
+  return matches[0] ?? null
 }
 
 async function listWorkspaceMounts(
@@ -133,6 +137,7 @@ function updateSpaceTargetMountId({
   const updatedSpaces = spacesRef.current.map(space =>
     space.id === targetSpace.id ? { ...space, targetMountId: nextMountId } : space,
   )
+  spacesRef.current = updatedSpaces
   onSpacesChange(updatedSpaces)
   onRequestPersistFlush?.()
 }
@@ -225,6 +230,7 @@ export async function resolveWorkspaceAgentLaunchBinding({
 
 export async function launchWorkspaceAgentSession({
   mountId,
+  workspacePath,
   executionDirectory,
   prompt,
   provider,
@@ -238,6 +244,7 @@ export async function launchWorkspaceAgentSession({
   retryResolveMountBinding,
 }: {
   mountId: string | null
+  workspacePath: string
   executionDirectory: string
   prompt: string
   provider: AgentProvider
@@ -314,6 +321,38 @@ export async function launchWorkspaceAgentSession({
         effectiveModel: launched.effectiveModel,
         executionDirectory: launched.executionContext.workingDirectory,
       }
+    }
+  }
+
+  const controlSurfaceInvoke = resolveControlSurfaceInvoke()
+  if (
+    controlSurfaceInvoke &&
+    shouldUseControlSurfacePlainRuntime({ workspacePath, executionDirectory })
+  ) {
+    const launched = await controlSurfaceInvoke<LaunchAgentSessionResult>({
+      kind: 'command',
+      id: 'session.launchAgent',
+      payload: {
+        cwd: executionDirectory,
+        prompt,
+        provider,
+        mode,
+        model,
+        resumeSessionId: mode === 'resume' ? resumeSessionId : null,
+        ...(executablePathOverride ? { executablePathOverride } : {}),
+        ...(Object.keys(mergedEnv).length > 0 ? { env: mergedEnv } : {}),
+        agentFullAccess: agentSettings.agentFullAccess,
+        cols: launchGeometry.terminalGeometry.cols,
+        rows: launchGeometry.terminalGeometry.rows,
+      },
+    })
+
+    return {
+      sessionId: launched.sessionId,
+      profileId: launched.profileId ?? null,
+      runtimeKind: launched.runtimeKind ?? undefined,
+      effectiveModel: launched.effectiveModel,
+      executionDirectory: launched.executionContext.workingDirectory,
     }
   }
 

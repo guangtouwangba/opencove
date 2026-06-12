@@ -30,6 +30,7 @@ export function useWorkspaceCanvasSpaceDirectoryOps({
       markNodeDirectoryMismatch?: boolean
       archiveSpace?: boolean
       renameSpaceTo?: string
+      targetMountId?: string | null
     },
   ) => void
   getSpaceBlockingNodes: (spaceId: string) => { agentNodeIds: string[]; terminalNodeIds: string[] }
@@ -43,6 +44,7 @@ export function useWorkspaceCanvasSpaceDirectoryOps({
         markNodeDirectoryMismatch?: boolean
         archiveSpace?: boolean
         renameSpaceTo?: string
+        targetMountId?: string | null
       },
     ) => {
       const result = computeSpaceDirectoryUpdate({
@@ -56,6 +58,7 @@ export function useWorkspaceCanvasSpaceDirectoryOps({
         return
       }
 
+      spacesRef.current = result.nextSpaces
       onSpacesChange(result.nextSpaces)
 
       if (result.archiveSpace && result.targetNodeIds.size > 0) {
