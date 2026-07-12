@@ -56,6 +56,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - CLI: Local Worker lifecycle controls with `worker status --all` and ownership-safe `worker stop`. (#195)
 
 ### 💅 Changed
+- UI: replace Project and Space modal dialogs with compact context-anchored popovers, use the selected folder name for local Projects, keep nested selectors interactive, and show Space-local progress during Worktree operations. (#307)
 - UI: refine the console and Control Center with compact proportions, accessible primitives, calibrated theme/toggle styling, and deterministic nested-overlay behavior. (#298)
 - UI: refine standby banner notification chrome with an accent hairline, standby pulse, and monospace branch/PR chips. (#297)
 - Task: simplify the node header into a Note-style actions menu, shorten the run button label, and compact agent session rows to icon, state, and time. (#294)

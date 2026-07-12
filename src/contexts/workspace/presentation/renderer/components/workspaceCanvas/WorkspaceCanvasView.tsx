@@ -14,10 +14,12 @@ import {
 import type { TerminalNodeData } from '../../types'
 import { MAX_CANVAS_ZOOM, MIN_CANVAS_ZOOM } from './constants'
 import type { WorkspaceCanvasViewProps } from './WorkspaceCanvasView.types'
+import { useActiveExplorerSpace } from './hooks/useActiveExplorerSpace'
 import { useWorkspaceCanvasGlobalDismissals } from './hooks/useGlobalDismissals'
 import { useWorkspaceCanvasSpaceMenuState } from './hooks/useCanvasSpaceMenuState'
 import { useWorkspaceCanvasLabelColorFilter } from './hooks/useLabelColorFilter'
 import { useViewportDprSnapping } from './hooks/useViewportDprSnapping'
+import { useSpaceWorktreeBusyLabels } from './hooks/useSpaceWorktreeBusyLabels'
 import { WorkspaceCanvasMenus } from './view/WorkspaceCanvasMenus'
 import { WorkspaceCanvasWindows } from './view/WorkspaceCanvasWindows'
 import { WorkspaceMinimapDock } from './view/WorkspaceMinimapDock'
@@ -164,11 +166,12 @@ export function WorkspaceCanvasView({
   closeSpaceActionMenu,
   copySpacePath,
   openSpacePath,
-  spaceWorktreeDialog,
+  spaceWorktreeOperations,
   worktreesRoot,
   openSpaceCreateWorktree,
   openSpaceArchive,
   closeSpaceWorktree,
+  setSpaceWorktreeOperationPhase,
   onShowMessage,
   onAppendSpaceArchiveRecord,
   updateSpaceDirectory,
@@ -179,6 +182,7 @@ export function WorkspaceCanvasView({
   const isDragSurfaceSelectionMode = useStore(selectDragSurfaceSelectionMode)
   const { labelColorFilter, setLabelColorFilter, usedLabelColors, filteredNodes, filteredEdges } =
     useWorkspaceCanvasLabelColorFilter({ nodes, edges, spaces })
+  const busyOperationBySpaceId = useSpaceWorktreeBusyLabels(spaceWorktreeOperations)
 
   useWorkspaceCanvasGlobalDismissals({
     contextMenu,
@@ -204,13 +208,7 @@ export function WorkspaceCanvasView({
     nodes,
   })
 
-  const activeExplorerSpace = React.useMemo(() => {
-    if (!openExplorerSpaceId) {
-      return null
-    }
-
-    return spaces.find(space => space.id === openExplorerSpaceId) ?? null
-  }, [openExplorerSpaceId, spaces])
+  const activeExplorerSpace = useActiveExplorerSpace(openExplorerSpaceId, spaces)
 
   React.useEffect(() => {
     if (!useManualCanvasWheelGestures) {
@@ -335,6 +333,7 @@ export function WorkspaceCanvasView({
         <WorkspaceSpaceRegionsOverlay
           workspacePath={workspacePath}
           spaceVisuals={spaceVisuals}
+          busyOperationBySpaceId={busyOperationBySpaceId}
           spaceFramePreview={spaceFramePreview}
           selectedSpaceIds={selectedSpaceIds}
           openExplorerSpaceId={openExplorerSpaceId}
@@ -479,13 +478,14 @@ export function WorkspaceCanvasView({
         spaceWorktreeMismatchDropWarning={spaceWorktreeMismatchDropWarning}
         cancelSpaceWorktreeMismatchDropWarning={cancelSpaceWorktreeMismatchDropWarning}
         continueSpaceWorktreeMismatchDropWarning={continueSpaceWorktreeMismatchDropWarning}
-        spaceWorktreeDialog={spaceWorktreeDialog}
+        spaceWorktreeOperations={spaceWorktreeOperations}
         spaces={spaces}
         nodes={nodes}
         workspacePath={workspacePath}
         worktreesRoot={worktreesRoot}
         agentSettings={agentSettings}
         closeSpaceWorktree={closeSpaceWorktree}
+        setSpaceWorktreeOperationPhase={setSpaceWorktreeOperationPhase}
         onShowMessage={onShowMessage}
         onAppendSpaceArchiveRecord={onAppendSpaceArchiveRecord}
         updateSpaceDirectory={updateSpaceDirectory}

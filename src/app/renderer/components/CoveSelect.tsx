@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown } from 'lucide-react'
+import {
+  TRANSIENT_LAYER_OWNER_ATTRIBUTE,
+  useTransientLayerOwner,
+} from './TransientLayerOwnerContext'
 import { DismissableLayer } from './ui/DismissableLayer'
 import { useIsWithinDialog } from './ui/Dialog'
 
@@ -52,6 +56,7 @@ export function CoveSelect({
   onChange: (nextValue: string) => void
 }): React.JSX.Element {
   const listboxId = useId()
+  const transientLayerOwner = useTransientLayerOwner()
   const isWithinDialog = useIsWithinDialog()
   const usesDialogPopoverLayer =
     menuLayer === 'dialog-popover' || (menuLayer === 'auto' && isWithinDialog)
@@ -334,6 +339,9 @@ export function CoveSelect({
               ref={menuRef}
               className={`cove-select__menu${usesDialogPopoverLayer ? ' cove-select__menu--within-dialog' : ''}${menuClassName ? ` ${menuClassName}` : ''}`}
               data-testid={menuTestId ?? (testId ? `${testId}-menu` : undefined)}
+              {...(transientLayerOwner
+                ? { [TRANSIENT_LAYER_OWNER_ATTRIBUTE]: transientLayerOwner }
+                : {})}
               role="listbox"
               branchRefs={[rootRef]}
               onDismiss={reason => {
