@@ -94,6 +94,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Spaces: allow empty Spaces (no last-node warning/auto-close), add pane context menu action to create an empty Space, and allow archiving a Space without saving its history. (#171)
 
 ### 🐞 Fixed
+- Agent: derive directly launched Agent titles from their first bound session and keep short-turn completion notifications aligned with the resolved title. (#309)
 - Sidebar: distinguish expandable Spaces from empty Spaces in the collapsed rail, keeping disclosure arrows only for Spaces with agents and using a subtle leaf marker for empty Spaces. (#308)
 - Worktrees: prevent background Git status polling from acquiring index locks or leaving stale locks when commands time out. (#305)
 - Worktree create: keep branch dropdowns above the Space worktree dialog so branches remain visible and selectable. (#304)
